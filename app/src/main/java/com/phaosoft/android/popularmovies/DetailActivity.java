@@ -10,6 +10,8 @@ import com.phaosoft.android.popularmovies.model.Movie;
 import com.phaosoft.android.popularmovies.utils.JsonUtils;
 import com.squareup.picasso.Picasso;
 
+import java.util.List;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
@@ -53,17 +55,17 @@ public class DetailActivity extends AppCompatActivity {
                 "      \"release_date\": \"2018-04-27\"\n" +
                 "    }";
 
-        Movie movie = JsonUtils.parseJsonMovie(json);
-
-        setTitle(movie.getTitle());
-        Log.i("Movie", movie.getPosterUrl());
+        List<Movie> movies = JsonUtils.parseJsonMovie(json);
+        Movie movieDetail = movies.get(0);
+        setTitle(movieDetail.getTitle());
+        Log.i("Movie", movieDetail.getPosterUrl());
         Picasso.with(this)
-                .load(movie.getPosterUrl())
+                .load(movieDetail.getPosterUrl())
                 .resize(400, 600)
                 .into(moviePoster);
-        releaseDate.setText(movie.getDate());
-        voteAverage.setText(String.valueOf(movie.getVote()));
-        movieDescription.setText(movie.getSynopsis());
+        releaseDate.setText(movieDetail.getDate());
+        voteAverage.setText(String.valueOf(movieDetail.getVote()));
+        movieDescription.setText(movieDetail.getSynopsis());
     }
 
 }

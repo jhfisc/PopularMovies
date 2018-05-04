@@ -35,4 +35,8 @@ public class Movie {
     public Double getVote() {
         return vote;
     }
+
+    public String toString() {
+        return this.title + ":" + this.date + ":" + this.vote;
+    }
 }

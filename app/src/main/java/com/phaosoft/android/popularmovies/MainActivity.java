@@ -35,11 +35,14 @@ import android.widget.ImageView;
 import android.widget.Spinner;
 
 import com.phaosoft.android.popularmovies.R;
+import com.phaosoft.android.popularmovies.model.Movie;
+import com.phaosoft.android.popularmovies.utils.JsonUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.List;
 import java.util.Scanner;
 
 import butterknife.BindView;
@@ -199,16 +202,17 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         if (null == data) {
             Log.i("onLoadFinished", "-----> data is null");
         } else {
-            // TODO - parse json data returned and populate grid layout
             Log.i("onLoadFinished", "-----> " + data);
+            List<Movie> movies = JsonUtils.parseJsonMovie(data);
+            if (movies != null && movies.size() > 0) {
+                // TODO - populate grid layout
+                Log.i("onLoadFinished", movies.get(0).toString());
+            }
         }
-
-
     }
 
     @Override
     public void onLoaderReset(@NonNull Loader<String> loader) {
         Log.i("onLoaderReset", "-----> called");
-
     }
 }
