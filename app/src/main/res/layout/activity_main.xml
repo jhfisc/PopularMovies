@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -23,7 +24,6 @@
         android:layout_height="wrap_content"
         android:text="@string/sort_label"
         android:textSize="16sp"
-        android:textStyle="bold"
         style="@style/TextAppearance.AppCompat.Caption"
         app:layout_constraintRight_toLeftOf="@id/sort_spinner"
         app:layout_constraintBottom_toBottomOf="@id/sort_spinner"
@@ -42,7 +42,42 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
+            <Button
+                android:id="@+id/column1_row1"
+                android:text="1,1"
+
+                android:layout_column="0"
+                android:layout_row="0"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"/>
+
+            <Button
+                android:id="@+id/column2_row1"
+                android:text="1,1"
+                android:layout_column="1"
+                android:layout_row="0"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"/>
+
+            <Button
+                android:id="@+id/column1_row2"
+                android:text="1,2"
+                android:layout_column="0"
+                android:layout_row="1"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"/>
+
+            <ImageView
+                android:id="@+id/column2_row2"
+                android:src="@mipmap/ic_launcher_round"
+                android:layout_column="1"
+                android:layout_row="1"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:clickable="true"/>
+
         </GridLayout>
+
     </ScrollView>
 
 </android.support.constraint.ConstraintLayout>
