@@ -56,12 +56,30 @@ import static android.widget.ListPopupWindow.WRAP_CONTENT;
 
 public class MainActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener,
         LoaderManager.LoaderCallbacks<String>{
+
     @BindView(R.id.sort_spinner) Spinner sortSpinner;
     @BindView(R.id.grid_layout) GridLayout pictureGrid;
     @BindView(R.id.column2_row2) ImageView mImageView;
 
     private static final int MOVIE_SEARCH_LOADER = 22;
     private static final String SEARCH_QUERY_URL_EXTRA = "query";
+
+    private static final String MOVIEDB_BASE_URL = "https://api.themoviedb.org/3/discover/movie";
+    private static final String PARAM_KEY = "api_key";
+    private static final String PARAM_LANGUAGE = "language";
+    private static final String PARAM_SORT = "sort_by";
+    private static final String PARAM_ADULT = "include_adult";
+    private static final String PARAM_VIDEO = "include_video";
+    private static final String PARAM_PAGE = "page";
+    private static final String PARAM_RELEASE = "primary_release_date.lte";
+    private static final String PARAM_REGION = "region";
+
+    private static final String API_KEY = "7d7dc1d96a37db918fc2d52df9ecffad";
+    private static final String SORT_POPULARITY = "popularity.desc";
+    private static final String SORT_RELEASE_DATE = "release_date.desc";
+
+    private static int currentSort = -1;
+    public static List<Movie> movies = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,13 +96,17 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         sortSpinner.setAdapter(adapter);
         sortSpinner.setOnItemSelectedListener(this);
         sortSpinner.setDropDownWidth(WRAP_CONTENT);
-        sortSpinner.setPrompt("Sort Order:");
+        if (currentSort == -1) {
+            currentSort = sortSpinner.getSelectedItemPosition();
+        } else {
+            sortSpinner.setSelection(currentSort);
+        }
 
         mImageView.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View view) {
-                launchDetailActivity(0);
+                launchDetailActivity(currentSort);
             }
 
         });
@@ -102,15 +124,27 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     }
 
+    @Override protected void onResume() {
+        super.onResume();
+        if (currentSort != -1) {
+            sortSpinner.setSelection(currentSort);
+        } else {
+            currentSort = sortSpinner.getSelectedItemPosition();
+        }
+    }
+
     private void launchDetailActivity(int position) {
+        if (movies == null) {
+            return ;
+        }
         Intent intent = new Intent(this, DetailActivity.class);
-        intent.putExtra(DetailActivity.MOVIE_POSITION, position);
+        intent.putExtra(DetailActivity.MOVIE_POSITION, 5);
         startActivity(intent);
     }
 
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-
+        currentSort = position;
     }
 
     @Override
@@ -203,7 +237,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             Log.i("onLoadFinished", "-----> data is null");
         } else {
             Log.i("onLoadFinished", "-----> " + data);
-            List<Movie> movies = JsonUtils.parseJsonMovie(data);
+            movies = JsonUtils.parseJsonMovie(data);
             if (movies != null && movies.size() > 0) {
                 // TODO - populate grid layout
                 Log.i("onLoadFinished", movies.get(0).toString());
