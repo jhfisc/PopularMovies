@@ -17,8 +17,11 @@
 
 package com.phaosoft.android.popularmovies;
 
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.PorterDuff;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -36,6 +39,7 @@ import android.widget.ArrayAdapter;
 import android.widget.GridLayout;
 import android.widget.ImageView;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 import com.phaosoft.android.popularmovies.model.Movie;
 import com.phaosoft.android.popularmovies.utils.JsonUtils;
@@ -64,7 +68,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     @BindView(R.id.sort_spinner) Spinner sortSpinner;
     @BindView(R.id.grid_layout) GridLayout pictureGrid;
+    @BindView(R.id.movie_db_image) ImageView mMovieDBImage;
     @BindView(R.id.column2_row2) ImageView mImageView;
+    @BindView(R.id.network_available) TextView mNetworkAvailibility;
 
     private static final int MOVIE_SEARCH_LOADER = 22;
     private static final String SEARCH_QUERY_URL_EXTRA = "query";
@@ -96,6 +102,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         ButterKnife.bind(this);  // bind the UI objects
 
+        if (! isNetworkAvailable()) {
+            mNetworkAvailibility.setVisibility(View.VISIBLE);
+        }
+
         ArrayAdapter<CharSequence> adapter =
                 ArrayAdapter.createFromResource(this, R.array.sorted_array,
                 R.layout.spinner_layout);
@@ -119,9 +129,21 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
             @Override
             public void onClick(View view) {
-                launchDetailActivity(currentSort);
+                launchDetailActivity(0);
             }
 
+        });
+
+        mMovieDBImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Uri uri = Uri.parse("https://www.themoviedb.org/");
+                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+
+                if (intent.resolveActivity(getPackageManager()) != null) {
+                    startActivity(intent);
+                }
+            }
         });
 
         Bundle queryBundle = new Bundle();
@@ -159,13 +181,25 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        LoaderManager loaderManager = getSupportLoaderManager();
+        Loader<String> movieSearchLoader = loaderManager.getLoader(MOVIE_SEARCH_LOADER);
+
+        if (! isNetworkAvailable()) {
+            mNetworkAvailibility.setVisibility(View.VISIBLE);
+            if (movieSearchLoader != null) {
+                movieSearchLoader.cancelLoad();
+            }
+            return ;
+        } else {
+            mNetworkAvailibility.setVisibility(View.INVISIBLE);
+        }
+
         currentSort = position;
         queryString = buildQueryString(currentSort);
+        Log.i("Query String", queryString);
         Bundle queryBundle = new Bundle();
         queryBundle.putString(SEARCH_QUERY_URL_EXTRA, queryString);
 
-        LoaderManager loaderManager = getSupportLoaderManager();
-        Loader<String> movieSearchLoader = loaderManager.getLoader(MOVIE_SEARCH_LOADER);
         if (movieSearchLoader == null) {
             loaderManager.initLoader(MOVIE_SEARCH_LOADER, queryBundle, this);
         } else {
@@ -286,7 +320,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             case "Most Popular":
                 sorter = SORT_POPULARITY;
                 break;
-            case "Relase Date":
+            case "Release Date":
                 sorter = SORT_RELEASE_DATE;
                 break;
             default:
@@ -310,5 +344,15 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 .build();
 
         return builtUri.toString();
+    }
+
+    private Boolean isNetworkAvailable() {
+        ConnectivityManager manager = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+        try {
+            NetworkInfo info = manager.getActiveNetworkInfo();
+            return info.isAvailable() && info.isConnected();
+        } catch (NullPointerException e) {
+            return false;
+        }
     }
 }
