@@ -20,8 +20,6 @@ package com.phaosoft.android.popularmovies;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.ColorFilter;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -72,7 +70,7 @@ import static android.widget.ListPopupWindow.WRAP_CONTENT;
  */
 
 public class MainActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener,
-        LoaderManager.LoaderCallbacks<String>{
+        LoaderManager.LoaderCallbacks<String> {
 
     @BindView(R.id.sort_spinner) Spinner sortSpinner;
     @BindView(R.id.grid_layout) GridLayout pictureGrid;
@@ -155,7 +153,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         } else {
             loaderManager.restartLoader(MOVIE_SEARCH_LOADER, queryBundle, this);
         }
-
     }
 
     @Override protected void onResume() {
