@@ -20,6 +20,7 @@ package com.phaosoft.android.popularmovies;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
+import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.LoaderManager;
@@ -46,6 +47,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
 
@@ -80,10 +83,14 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     private static final String API_KEY = "7d7dc1d96a37db918fc2d52df9ecffad";
     private static final String SORT_POPULARITY = "popularity.desc";
+    private static final String SORT_VOTE = "vote_average.desc";
     private static final String SORT_RELEASE_DATE = "release_date.desc";
 
     private static int currentSort = -1;
     public static List<Movie> movies = null;
+
+    private static String queryString = null;
+    private ArrayAdapter<CharSequence> adapter = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,10 +99,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         ButterKnife.bind(this);  // bind the UI objects
 
-        String queryString = "https://api.themoviedb.org/3/discover/movie?api_key=7d7dc1d96a37db918fc2d52df9ecffad&language=en-US&sort_by=popularity.desc&include_adult=false&include_video=false&page=1";
-
-        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
-                R.array.sorted_array, R.layout.spinner_layout);
+        adapter = ArrayAdapter.createFromResource(this, R.array.sorted_array,
+                R.layout.spinner_layout);
         adapter.setDropDownViewResource(R.layout.spinner_menu_layout);
         int white = ContextCompat.getColor(this, android.R.color.white);
         sortSpinner.getBackground().setColorFilter(white, PorterDuff.Mode.SRC_ATOP);
@@ -109,6 +114,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         } else {
             sortSpinner.setSelection(currentSort);
         }
+        queryString = buildQueryString(currentSort);
+        Log.i("queryString", queryString);
 
         mImageView.setOnClickListener(new View.OnClickListener() {
 
@@ -138,6 +145,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             sortSpinner.setSelection(currentSort);
         } else {
             currentSort = sortSpinner.getSelectedItemPosition();
+            queryString = buildQueryString(currentSort);
+            Log.i("queryString", queryString);
         }
     }
 
@@ -146,13 +155,24 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             return ;
         }
         Intent intent = new Intent(this, DetailActivity.class);
-        intent.putExtra(DetailActivity.MOVIE_POSITION, 5);
+        intent.putExtra(DetailActivity.MOVIE_POSITION, 0);
         startActivity(intent);
     }
 
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
         currentSort = position;
+        queryString = buildQueryString(currentSort);
+        Bundle queryBundle = new Bundle();
+        queryBundle.putString(SEARCH_QUERY_URL_EXTRA, queryString);
+
+        LoaderManager loaderManager = getSupportLoaderManager();
+        Loader<String> movieSearchLoader = loaderManager.getLoader(MOVIE_SEARCH_LOADER);
+        if (movieSearchLoader == null) {
+            loaderManager.initLoader(MOVIE_SEARCH_LOADER, queryBundle, this);
+        } else {
+            loaderManager.restartLoader(MOVIE_SEARCH_LOADER, queryBundle, this);
+        }
     }
 
     @Override
@@ -256,5 +276,36 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     @Override
     public void onLoaderReset(@NonNull Loader<String> loader) {
         Log.i("onLoaderReset", "-----> called");
+    }
+
+    public String buildQueryString(int position) {
+        String itemString = String.valueOf(sortSpinner.getItemAtPosition(position));
+        String sorter = null;
+        if (itemString.equals("Highest Rated")) {
+            sorter = SORT_VOTE;
+        } else if (itemString.equals("Most Popular")) {
+            sorter = SORT_POPULARITY;
+        } else if (itemString.equals("Release Date")) {
+            sorter = SORT_RELEASE_DATE;
+        } else {
+            return null;
+        }
+
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+        Date date = new Date();
+        String today = formatter.format(date);
+
+        Uri builtUri = Uri.parse(MOVIEDB_BASE_URL).buildUpon()
+                .appendQueryParameter(PARAM_KEY, API_KEY)
+                .appendQueryParameter(PARAM_SORT, sorter)
+                .appendQueryParameter(PARAM_REGION, "US")
+                .appendQueryParameter(PARAM_LANGUAGE, "en-US")
+                .appendQueryParameter(PARAM_ADULT, "false")
+                .appendQueryParameter(PARAM_VIDEO, "false")
+                .appendQueryParameter(PARAM_PAGE, "1")
+                .appendQueryParameter(PARAM_RELEASE, today)
+                .build();
+
+        return builtUri.toString();
     }
 }
