@@ -18,7 +18,6 @@
 package com.phaosoft.android.popularmovies;
 
 import android.content.Intent;
-import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.net.Uri;
 import android.support.annotation.NonNull;
@@ -37,9 +36,7 @@ import android.widget.ArrayAdapter;
 import android.widget.GridLayout;
 import android.widget.ImageView;
 import android.widget.Spinner;
-import android.widget.TextView;
 
-import com.phaosoft.android.popularmovies.R;
 import com.phaosoft.android.popularmovies.model.Movie;
 import com.phaosoft.android.popularmovies.utils.JsonUtils;
 
@@ -50,6 +47,7 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Scanner;
 
 import butterknife.BindView;
@@ -90,7 +88,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     public static List<Movie> movies = null;
 
     private static String queryString = null;
-    private ArrayAdapter<CharSequence> adapter = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -99,7 +96,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         ButterKnife.bind(this);  // bind the UI objects
 
-        adapter = ArrayAdapter.createFromResource(this, R.array.sorted_array,
+        ArrayAdapter<CharSequence> adapter =
+                ArrayAdapter.createFromResource(this, R.array.sorted_array,
                 R.layout.spinner_layout);
         adapter.setDropDownViewResource(R.layout.spinner_menu_layout);
         int white = ContextCompat.getColor(this, android.R.color.white);
@@ -155,7 +153,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             return ;
         }
         Intent intent = new Intent(this, DetailActivity.class);
-        intent.putExtra(DetailActivity.MOVIE_POSITION, 0);
+        intent.putExtra(DetailActivity.MOVIE_POSITION, position);
         startActivity(intent);
     }
 
@@ -280,18 +278,23 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     public String buildQueryString(int position) {
         String itemString = String.valueOf(sortSpinner.getItemAtPosition(position));
-        String sorter = null;
-        if (itemString.equals("Highest Rated")) {
-            sorter = SORT_VOTE;
-        } else if (itemString.equals("Most Popular")) {
-            sorter = SORT_POPULARITY;
-        } else if (itemString.equals("Release Date")) {
-            sorter = SORT_RELEASE_DATE;
-        } else {
-            return null;
+        String sorter;
+        switch (itemString) {
+            case "Highest Rated":
+                sorter = SORT_VOTE;
+                break;
+            case "Most Popular":
+                sorter = SORT_POPULARITY;
+                break;
+            case "Relase Date":
+                sorter = SORT_RELEASE_DATE;
+                break;
+            default:
+                sorter = SORT_POPULARITY;
+                break;
         }
 
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
         Date date = new Date();
         String today = formatter.format(date);
 
