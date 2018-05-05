@@ -54,6 +54,7 @@ public class DetailActivity extends AppCompatActivity {
         Log.i("Movie", movieDetail.getPosterUrl());
         Picasso.with(this)
                 .load(movieDetail.getPosterUrl())
+                .placeholder(R.drawable.image_unavailable)
                 .resize(400, 600)
                 .into(moviePoster);
         releaseDate.setText(movieDetail.getDate());
