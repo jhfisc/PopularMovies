@@ -18,10 +18,13 @@
 package com.phaosoft.android.popularmovies;
 
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -33,6 +36,7 @@ import android.widget.ArrayAdapter;
 import android.widget.GridLayout;
 import android.widget.ImageView;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 import com.phaosoft.android.popularmovies.R;
 import com.phaosoft.android.popularmovies.model.Movie;
@@ -91,11 +95,15 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         String queryString = "https://api.themoviedb.org/3/discover/movie?api_key=7d7dc1d96a37db918fc2d52df9ecffad&language=en-US&sort_by=popularity.desc&include_adult=false&include_video=false&page=1";
 
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
-                R.array.sorted_array, android.R.layout.simple_spinner_item);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                R.array.sorted_array, R.layout.spinner_layout);
+        adapter.setDropDownViewResource(R.layout.spinner_menu_layout);
+        int white = ContextCompat.getColor(this, android.R.color.white);
+        sortSpinner.getBackground().setColorFilter(white, PorterDuff.Mode.SRC_ATOP);
+
         sortSpinner.setAdapter(adapter);
         sortSpinner.setOnItemSelectedListener(this);
         sortSpinner.setDropDownWidth(WRAP_CONTENT);
+
         if (currentSort == -1) {
             currentSort = sortSpinner.getSelectedItemPosition();
         } else {
