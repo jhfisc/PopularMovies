@@ -15,6 +15,7 @@
         android:orientation="horizontal">
 
         <ImageView
+            android:contentDescription="@string/movie_description"
             android:id="@+id/movie_db_image"
             android:layout_width="100dp"
             android:layout_height="40dp"
@@ -33,7 +34,7 @@
             style="@style/TextAppearance.AppCompat.Caption"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingLeft="8dp"
+            android:paddingStart="8dp"
             android:text="@string/sort_label"
             android:textColor="@android:color/white"
             android:textSize="16sp"
@@ -67,7 +68,9 @@
         <GridLayout
             android:id="@+id/grid_layout"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"></GridLayout>
+            android:layout_height="wrap_content">
+
+        </GridLayout>
 
     </ScrollView>
 
