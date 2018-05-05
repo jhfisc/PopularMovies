@@ -19,7 +19,12 @@ package com.phaosoft.android.popularmovies;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.ColorFilter;
 import android.graphics.PorterDuff;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -29,6 +34,8 @@ import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.Loader;
+import android.support.v4.content.res.ResourcesCompat;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -43,6 +50,7 @@ import android.widget.TextView;
 
 import com.phaosoft.android.popularmovies.model.Movie;
 import com.phaosoft.android.popularmovies.utils.JsonUtils;
+import com.squareup.picasso.Picasso;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -69,7 +77,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     @BindView(R.id.sort_spinner) Spinner sortSpinner;
     @BindView(R.id.grid_layout) GridLayout pictureGrid;
     @BindView(R.id.movie_db_image) ImageView mMovieDBImage;
-    @BindView(R.id.column2_row2) ImageView mImageView;
     @BindView(R.id.network_available) TextView mNetworkAvailibility;
 
     private static final int MOVIE_SEARCH_LOADER = 22;
@@ -122,17 +129,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         } else {
             sortSpinner.setSelection(currentSort);
         }
-        queryString = buildQueryString(currentSort);
-        Log.i("queryString", queryString);
-
-        mImageView.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View view) {
-                launchDetailActivity(0);
-            }
-
-        });
 
         mMovieDBImage.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -145,6 +141,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 }
             }
         });
+
+        queryString = buildQueryString(currentSort);
+        Log.i("queryString", queryString);
 
         Bundle queryBundle = new Bundle();
         queryBundle.putString(SEARCH_QUERY_URL_EXTRA, queryString);
@@ -302,6 +301,60 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 // TODO - populate grid layout
                 Log.i("onLoadFinished", movies.get(0).toString());
             }
+        }
+
+        pictureGrid.removeAllViews();
+
+        int width = pictureGrid.getWidth();
+        int total = movies.size();
+        int column = 4;
+        int row = total / column;
+        pictureGrid.setColumnCount(column);
+        pictureGrid.setRowCount(row + 1);
+        int image_width = width / column;
+        int image_height = (image_width * 3) / 2;
+
+        Drawable unavailable = ResourcesCompat.getDrawable(getResources(),
+                R.drawable.image_unavailable, null);
+        Bitmap bitmap = ((BitmapDrawable) unavailable).getBitmap();
+        unavailable = new BitmapDrawable(getResources(), Bitmap.createScaledBitmap(bitmap,
+                image_width, image_height, true));
+
+        for (int i = 0, c = 0, r = 0; i < total; i++, c++) {
+            if (c == column) {
+                c = 0;
+                r++;
+            }
+
+            Movie movie = movies.get(i);
+            ImageView dImageView = new ImageView(this);
+            DrawerLayout.LayoutParams dImageParams =
+                    new DrawerLayout.LayoutParams(width/column,
+                            ((width/column)* 3)/2);
+            dImageView.setLayoutParams(dImageParams);
+            dImageView.setTag(i);
+            Picasso.with(this)
+                    .load(movie.getPosterUrl())
+                    .resize(image_width, image_height)
+                    .centerCrop()
+                    .placeholder(unavailable)
+                    .into(dImageView);
+
+            dImageView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    int tag = (int)view.getTag();
+                    launchDetailActivity(tag);
+                }
+            });
+
+            dImageView.setLayoutParams(new GridLayout.LayoutParams());
+
+             GridLayout.Spec rowSpan = GridLayout.spec(GridLayout.UNDEFINED, 1);
+             GridLayout.Spec colspan = GridLayout.spec(GridLayout.UNDEFINED, 1);
+            GridLayout.LayoutParams gridParam = new GridLayout.LayoutParams(
+                    rowSpan, colspan);
+            pictureGrid.addView(dImageView, gridParam);
         }
     }
 
