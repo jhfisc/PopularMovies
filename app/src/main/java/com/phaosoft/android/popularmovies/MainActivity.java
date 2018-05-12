@@ -43,6 +43,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.GridLayout;
 import android.widget.ImageView;
+import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -54,10 +55,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.net.UnknownHostException;
 import java.util.List;
-import java.util.Locale;
 import java.util.Scanner;
 
 import butterknife.BindView;
@@ -73,6 +72,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         LoaderManager.LoaderCallbacks<String> {
 
     @BindView(R.id.sort_spinner) Spinner sortSpinner;
+    @BindView(R.id.scroll_view) ScrollView scrollView;
     @BindView(R.id.grid_layout) GridLayout pictureGrid;
     @BindView(R.id.movie_db_image) ImageView mMovieDBImage;
     @BindView(R.id.network_available) TextView mNetworkAvailibility;
@@ -80,20 +80,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     private static final int MOVIE_SEARCH_LOADER = 22;
     private static final String SEARCH_QUERY_URL_EXTRA = "query";
 
-    private static final String MOVIEDB_BASE_URL = "https://api.themoviedb.org/3/discover/movie";
+    private static final String MOVIEDB_BASE_URL = "http://api.themoviedb.org/3/movie/";
     private static final String PARAM_KEY = "api_key";
-    private static final String PARAM_LANGUAGE = "language";
-    private static final String PARAM_SORT = "sort_by";
-    private static final String PARAM_ADULT = "include_adult";
-    private static final String PARAM_VIDEO = "include_video";
-    private static final String PARAM_PAGE = "page";
-    private static final String PARAM_RELEASE = "primary_release_date.lte";
-    private static final String PARAM_REGION = "region";
-
+    private static final String POPULAR = "popular";
+    private static final String TOP_RATED = "top_rated";
     private static final String API_KEY = "7d7dc1d96a37db918fc2d52df9ecffad";
-    private static final String SORT_POPULARITY = "popularity.desc";
-    private static final String SORT_VOTE = "vote_average.desc";
-    private static final String SORT_RELEASE_DATE = "release_date.desc";
 
     private static int currentSort = -1;
     public static List<Movie> movies = null;
@@ -141,7 +132,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         });
 
         queryString = buildQueryString(currentSort);
-        Log.i("queryString", queryString);
+        Log.d("Query String", queryString);
 
         Bundle queryBundle = new Bundle();
         queryBundle.putString(SEARCH_QUERY_URL_EXTRA, queryString);
@@ -162,7 +153,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         } else {
             currentSort = sortSpinner.getSelectedItemPosition();
             queryString = buildQueryString(currentSort);
-            Log.i("queryString", queryString);
+            Log.d("Query String", queryString);
         }
     }
 
@@ -192,7 +183,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         currentSort = position;
         queryString = buildQueryString(currentSort);
-        Log.i("Query String", queryString);
+        Log.d("Query String", queryString);
         Bundle queryBundle = new Bundle();
         queryBundle.putString(SEARCH_QUERY_URL_EXTRA, queryString);
 
@@ -211,7 +202,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     @NonNull
     @Override
     public Loader<String> onCreateLoader(int id, @Nullable final Bundle args) {
-        Log.i("onCreateLoader", "-----> called");
         return new AsyncTaskLoader<String>(this) {
 
             String movieJson;
@@ -230,7 +220,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                  */
 
                 if (movieJson != null) {
-                    Log.i("onStartLoading", movieJson);
                     deliverResult(movieJson);
                 } else {
                     forceLoad();
@@ -281,6 +270,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             } else {
                 return null;
             }
+        } catch (UnknownHostException e) {
+            // ignore unknown host exception, most likely a device configuration issue
+            return null;
         } finally {
             urlConnection.disconnect();
         }
@@ -288,40 +280,45 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     @Override
     public void onLoadFinished(@NonNull Loader<String> loader, String data) {
-        Log.i("onLoadFinished", "-----> called");
         if (null == data) {
-            Log.i("onLoadFinished", "-----> data is null");
+            Log.d("onLoadFinished", "data null");
+            return ;
         } else {
-            Log.i("onLoadFinished", "-----> " + data);
             movies = JsonUtils.parseJsonMovie(data);
             if (movies != null && movies.size() > 0) {
-                // TODO - populate grid layout
-                Log.i("onLoadFinished", movies.get(0).toString());
+                Log.d("onLoadFinished", movies.get(0).toString());
             }
         }
 
-        pictureGrid.removeAllViews();
-
+        // calculate the image size
         int width = pictureGrid.getWidth();
         int total = movies.size();
-        int column = 4;
-        int row = total / column;
-        pictureGrid.setColumnCount(column);
-        pictureGrid.setRowCount(row + 1);
+        int column = 2;
+        while ((width / column) > 540) {
+            column++;
+        }
+        Log.d("onLoadFinished", "columns: " + column);
         int image_width = width / column;
         int image_height = (image_width * 3) / 2;
 
+        int row = total / column;
+        pictureGrid.setColumnCount(column);
+        pictureGrid.setRowCount(row + 1);
+
+        pictureGrid.removeAllViews();
+
+        // image_unavailable is too big for the size of the thumbnails, therefore, resize it
         Drawable unavailable = ResourcesCompat.getDrawable(getResources(),
                 R.drawable.image_unavailable, null);
-        Bitmap bitmap = ((BitmapDrawable) unavailable).getBitmap();
-        unavailable = new BitmapDrawable(getResources(), Bitmap.createScaledBitmap(bitmap,
-                image_width, image_height, true));
+        Bitmap bitmap;
+        if (unavailable != null) {
+            bitmap = ((BitmapDrawable) unavailable).getBitmap();
+            unavailable = new BitmapDrawable(getResources(), Bitmap.createScaledBitmap(bitmap,
+                    image_width, image_height, true));
+        }
 
-        for (int i = 0, c = 0, r = 0; i < total; i++, c++) {
-            if (c == column) {
-                c = 0;
-                r++;
-            }
+        Log.d("onLoadFinished", "Total movies: " + total);
+        for (int i = 0; i < total; i++) {
 
             Movie movie = movies.get(i);
             ImageView dImageView = new ImageView(this);
@@ -347,62 +344,51 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
             dImageView.setLayoutParams(new GridLayout.LayoutParams());
 
-             GridLayout.Spec rowSpan = GridLayout.spec(GridLayout.UNDEFINED, 1);
-             GridLayout.Spec colspan = GridLayout.spec(GridLayout.UNDEFINED, 1);
+            GridLayout.Spec rowSpan = GridLayout.spec(GridLayout.UNDEFINED, 1);
+            GridLayout.Spec colspan = GridLayout.spec(GridLayout.UNDEFINED, 1);
             GridLayout.LayoutParams gridParam = new GridLayout.LayoutParams(
                     rowSpan, colspan);
             pictureGrid.addView(dImageView, gridParam);
+
         }
+
     }
 
     @Override
-    public void onLoaderReset(@NonNull Loader<String> loader) {
-        Log.i("onLoaderReset", "-----> called");
-    }
+    public void onLoaderReset(@NonNull Loader<String> loader) { }
 
     public String buildQueryString(int position) {
         String itemString = String.valueOf(sortSpinner.getItemAtPosition(position));
         String sorter;
         switch (itemString) {
             case "Highest Rated":
-                sorter = SORT_VOTE;
+                sorter = TOP_RATED;
                 break;
             case "Most Popular":
-                sorter = SORT_POPULARITY;
-                break;
-            case "Release Date":
-                sorter = SORT_RELEASE_DATE;
+                sorter = POPULAR;
                 break;
             default:
-                sorter = SORT_POPULARITY;
+                sorter = POPULAR;
                 break;
         }
 
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
-        Date date = new Date();
-        String today = formatter.format(date);
-
-        Uri builtUri = Uri.parse(MOVIEDB_BASE_URL).buildUpon()
+        Uri builtUri = Uri.parse(MOVIEDB_BASE_URL + sorter).buildUpon()
                 .appendQueryParameter(PARAM_KEY, API_KEY)
-                .appendQueryParameter(PARAM_SORT, sorter)
-                .appendQueryParameter(PARAM_REGION, "US")
-                .appendQueryParameter(PARAM_LANGUAGE, "en-US")
-                .appendQueryParameter(PARAM_ADULT, "false")
-                .appendQueryParameter(PARAM_VIDEO, "false")
-                .appendQueryParameter(PARAM_PAGE, "1")
-                .appendQueryParameter(PARAM_RELEASE, today)
+                .appendQueryParameter("page", "1")
                 .build();
-
         return builtUri.toString();
     }
 
     private Boolean isNetworkAvailable() {
         ConnectivityManager manager = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
         try {
-            NetworkInfo info = manager.getActiveNetworkInfo();
-            return info.isAvailable() && info.isConnected();
+            if (manager != null) {
+                NetworkInfo info = manager.getActiveNetworkInfo();
+                return info.isAvailable() && info.isConnected();
+            }
         } catch (NullPointerException e) {
             return false;
         }
+        return false;
     }
 }

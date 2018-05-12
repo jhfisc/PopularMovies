@@ -5,7 +5,6 @@
     <string-array name="sorted_array">
         <item>Most Popular</item>
         <item>Highest Rated</item>
-        <item>Release Date</item>
     </string-array>
 
     <string name="unavailable_network">Network is Unavailable</string>

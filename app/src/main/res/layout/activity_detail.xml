@@ -9,13 +9,12 @@
     <android.support.constraint.ConstraintLayout
         android:id="@+id/constraint"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="wrap_content">
 
-        <!-- Movie details layout contains title, release date, movie poster, vote average, and plot synopsis. -->
         <ImageView
             android:id="@+id/movie_poster"
-            android:layout_width="400px"
-            android:layout_height="600px"
+            android:layout_width="150dp"
+            android:layout_height="225dp"
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
             android:adjustViewBounds="true"
@@ -32,7 +31,7 @@
             android:textStyle="bold"
             app:layout_constraintLeft_toRightOf="@id/movie_poster"
             android:layout_marginTop="8dp"
-            android:layout_marginLeft="8dp"
+            android:layout_marginStart="8dp"
             app:layout_constraintTop_toTopOf="parent"/>
 
         <TextView
