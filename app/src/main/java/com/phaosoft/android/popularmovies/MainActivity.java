@@ -86,6 +86,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     private static final String MOVIEDB_BASE_URL = "http://api.themoviedb.org/3/movie/";
     private static final String PARAM_KEY = "api_key";
+    private static final String PARAM_PAGE = "page";
     private static final String POPULAR = "popular";
     private static final String TOP_RATED = "top_rated";
     private static final String API_KEY = "7d7dc1d96a37db918fc2d52df9ecffad";
@@ -96,6 +97,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     private static String queryString = null;
 
     private static int yPosition = -1;
+    private static int page = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -146,6 +148,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             }
         });
 
+        page = 1;
         queryString = buildQueryString(currentSort);
         Log.d("Query String", queryString);
 
@@ -254,9 +257,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
                 /* Parse the URL from the passed in String and perform the search */
                 try {
-                    URL githubUrl = new URL(searchQueryUrlString);
-                    String githubSearchResults = getResponseFromHttpUrl(githubUrl);
-                    return githubSearchResults;
+                    URL movieUrl = new URL(searchQueryUrlString);
+                    String movieSearchResults = getResponseFromHttpUrl(movieUrl);
+                    return movieSearchResults;
                 } catch (IOException e) {
                     e.printStackTrace();
                     return null;
@@ -409,9 +412,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 break;
         }
 
+        int queryPage = Math.max(1, page);
         Uri builtUri = Uri.parse(MOVIEDB_BASE_URL + sorter).buildUpon()
                 .appendQueryParameter(PARAM_KEY, API_KEY)
-                .appendQueryParameter("page", "1")
+                .appendQueryParameter(PARAM_PAGE, Integer.toString(queryPage))
                 .build();
         return builtUri.toString();
     }
