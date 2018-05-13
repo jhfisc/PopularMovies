@@ -39,6 +39,7 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.GridLayout;
@@ -56,6 +57,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
@@ -77,6 +79,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     @BindView(R.id.movie_db_image) ImageView mMovieDBImage;
     @BindView(R.id.network_available) TextView mNetworkAvailibility;
 
+    private static final int MINIMUM_IMAGE_WIDTH = 540;
+
     private static final int MOVIE_SEARCH_LOADER = 22;
     private static final String SEARCH_QUERY_URL_EXTRA = "query";
 
@@ -90,6 +94,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     public static List<Movie> movies = null;
 
     private static String queryString = null;
+
+    private static int yPosition = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -128,6 +134,15 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 if (intent.resolveActivity(getPackageManager()) != null) {
                     startActivity(intent);
                 }
+            }
+        });
+
+        ViewTreeObserver observer = scrollView.getViewTreeObserver();
+        observer.addOnScrollChangedListener(new ViewTreeObserver.OnScrollChangedListener() {
+            @Override
+            public void onScrollChanged() {
+                // save the current Y location of the scrollview each time the view is moved
+                yPosition = scrollView.getScrollY();
             }
         });
 
@@ -278,27 +293,44 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         }
     }
 
+    private boolean moviesSame(List<Movie> current) {
+        if (movies == null || current == null) {
+            return movies == null && current == null;
+        }
+
+        boolean equal = movies.size() == current.size();
+        for (int i = 0; i < movies.size() && equal; i++) {
+            equal = movies.get(i).equals(current.get(i));
+        }
+        return equal;
+    }
+
     @Override
     public void onLoadFinished(@NonNull Loader<String> loader, String data) {
         if (null == data) {
             Log.d("onLoadFinished", "data null");
             return ;
         } else {
-            movies = JsonUtils.parseJsonMovie(data);
+            List<Movie> tmpMovies = JsonUtils.parseJsonMovie(data);
+            if (tmpMovies != null && ! moviesSame(tmpMovies)) {
+                movies = new ArrayList<>(tmpMovies);
+                yPosition = -1;
+            }
             if (movies != null && movies.size() > 0) {
-                Log.d("onLoadFinished", movies.get(0).toString());
+                Log.d("onLoadFinished", movies.toString());
             }
         }
 
-        // calculate the image size
+        // calculate the image size based upon the grid size
         int width = pictureGrid.getWidth();
         int total = movies.size();
         int column = 2;
-        while ((width / column) > 540) {
+        while ((width / column) > MINIMUM_IMAGE_WIDTH) {
             column++;
         }
-        Log.d("onLoadFinished", "columns: " + column);
+
         int image_width = width / column;
+        // a movie poster's height is typically 1 1/2 times the width
         int image_height = (image_width * 3) / 2;
 
         int row = total / column;
@@ -317,7 +349,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                     image_width, image_height, true));
         }
 
-        Log.d("onLoadFinished", "Total movies: " + total);
         for (int i = 0; i < total; i++) {
 
             Movie movie = movies.get(i);
@@ -350,6 +381,12 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                     rowSpan, colspan);
             pictureGrid.addView(dImageView, gridParam);
 
+        }
+
+        if (yPosition != -1) {
+            scrollView.scrollTo(0, yPosition);
+        } else {
+            scrollView.scrollTo(0, 0);
         }
 
     }

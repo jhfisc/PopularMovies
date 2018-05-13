@@ -1,5 +1,7 @@
 package com.phaosoft.android.popularmovies.model;
 
+import android.util.Log;
+
 public class Movie {
     private String title;
     private String date;
@@ -38,5 +40,13 @@ public class Movie {
 
     public String toString() {
         return this.title + ":" + this.date + ":" + this.vote;
+    }
+
+    public boolean equals(Movie comp) {
+        return this.title.equals(comp.getTitle()) &&
+                this.date.equals(comp.getDate()) &&
+                this.posterUrl.equals(comp.getPosterUrl()) &&
+                this.synopsis.equals(comp.getSynopsis()) &&
+                Math.abs(this.vote) == Math.abs(comp.vote);
     }
 }
