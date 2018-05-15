@@ -19,9 +19,7 @@ package com.phaosoft.android.popularmovies;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.graphics.PorterDuff;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -32,7 +30,6 @@ import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.Loader;
-import android.support.v4.content.res.ResourcesCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -49,8 +46,11 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.phaosoft.android.popularmovies.model.Movie;
+import com.phaosoft.android.popularmovies.utils.ImageUtils;
 import com.phaosoft.android.popularmovies.utils.JsonUtils;
 import com.squareup.picasso.Picasso;
+
+import org.apache.commons.collections4.ListUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -97,7 +97,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     private static String queryString = null;
 
     private static int yPosition = -1;
-    private static int page = 0;
+    private static int page = 1;
+    private static boolean dealingWithBottom = true;
+    private static boolean spinnerBeingSet = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -124,6 +126,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         if (currentSort == -1) {
             currentSort = sortSpinner.getSelectedItemPosition();
         } else {
+            spinnerBeingSet = true;
             sortSpinner.setSelection(currentSort);
         }
 
@@ -139,18 +142,43 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             }
         });
 
+        // set observers on the scrollView
         ViewTreeObserver observer = scrollView.getViewTreeObserver();
         observer.addOnScrollChangedListener(new ViewTreeObserver.OnScrollChangedListener() {
             @Override
             public void onScrollChanged() {
                 // save the current Y location of the scrollview each time the view is moved
                 yPosition = scrollView.getScrollY();
+                int bottom = yPosition + scrollView.getHeight();
+                if (! dealingWithBottom && scrollView.getChildAt(0).getBottom() <= bottom) {
+                    dealingWithBottom = true;
+                    page++;
+                    queryMovieDB();
+                }
             }
         });
 
-        page = 1;
+        observer.addOnGlobalLayoutListener(
+                new ViewTreeObserver.OnGlobalLayoutListener() {
+                    @Override
+                    public void onGlobalLayout() {
+                        // layout is done now scroll to the appropriate location
+                        if (yPosition != -1) {
+                            scrollView.scrollTo(0, yPosition);
+                        } else {
+                            scrollView.scrollTo(0, 0);
+                        }
+                        dealingWithBottom = false;
+                    }
+                }
+        );
+
+
+        queryMovieDB();
+    }
+
+    private void queryMovieDB() {
         queryString = buildQueryString(currentSort);
-        Log.d("Query String", queryString);
 
         Bundle queryBundle = new Bundle();
         queryBundle.putString(SEARCH_QUERY_URL_EXTRA, queryString);
@@ -171,12 +199,12 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         } else {
             currentSort = sortSpinner.getSelectedItemPosition();
             queryString = buildQueryString(currentSort);
-            Log.d("Query String", queryString);
         }
     }
 
     private void launchDetailActivity(int position) {
         if (movies == null) {
+            Log.d("Main", "no movies to select");
             return ;
         }
         Intent intent = new Intent(this, DetailActivity.class);
@@ -186,6 +214,14 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        // if the spinner is being set from onCreate do nothing
+        if (spinnerBeingSet) {
+            spinnerBeingSet = false;
+            return ;
+        }
+
+        pictureGrid.removeAllViews();
+
         LoaderManager loaderManager = getSupportLoaderManager();
         Loader<String> movieSearchLoader = loaderManager.getLoader(MOVIE_SEARCH_LOADER);
 
@@ -199,23 +235,16 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             mNetworkAvailibility.setVisibility(View.INVISIBLE);
         }
 
+        // ensure that the first page is retrieved
+        page = 1;
         currentSort = position;
-        queryString = buildQueryString(currentSort);
-        Log.d("Query String", queryString);
-        Bundle queryBundle = new Bundle();
-        queryBundle.putString(SEARCH_QUERY_URL_EXTRA, queryString);
+        queryMovieDB();
+        spinnerBeingSet = false;
 
-        if (movieSearchLoader == null) {
-            loaderManager.initLoader(MOVIE_SEARCH_LOADER, queryBundle, this);
-        } else {
-            loaderManager.restartLoader(MOVIE_SEARCH_LOADER, queryBundle, this);
-        }
     }
 
     @Override
-    public void onNothingSelected(AdapterView<?> parent) {
-
-    }
+    public void onNothingSelected(AdapterView<?> parent) { }
 
     @NonNull
     @Override
@@ -311,16 +340,14 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     @Override
     public void onLoadFinished(@NonNull Loader<String> loader, String data) {
         if (null == data) {
-            Log.d("onLoadFinished", "data null");
             return ;
         } else {
             List<Movie> tmpMovies = JsonUtils.parseJsonMovie(data);
-            if (tmpMovies != null && ! moviesSame(tmpMovies)) {
+            if (movies == null && tmpMovies != null) {
                 movies = new ArrayList<>(tmpMovies);
                 yPosition = -1;
-            }
-            if (movies != null && movies.size() > 0) {
-                Log.d("onLoadFinished", movies.toString());
+            } else if (tmpMovies != null && ! moviesSame(tmpMovies)) {
+                movies = ListUtils.union(movies, tmpMovies);
             }
         }
 
@@ -336,21 +363,15 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         // a movie poster's height is typically 1 1/2 times the width
         int image_height = (image_width * 3) / 2;
 
+        pictureGrid.removeAllViews();
+
         int row = total / column;
         pictureGrid.setColumnCount(column);
         pictureGrid.setRowCount(row + 1);
 
-        pictureGrid.removeAllViews();
-
         // image_unavailable is too big for the size of the thumbnails, therefore, resize it
-        Drawable unavailable = ResourcesCompat.getDrawable(getResources(),
-                R.drawable.image_unavailable, null);
-        Bitmap bitmap;
-        if (unavailable != null) {
-            bitmap = ((BitmapDrawable) unavailable).getBitmap();
-            unavailable = new BitmapDrawable(getResources(), Bitmap.createScaledBitmap(bitmap,
-                    image_width, image_height, true));
-        }
+        Drawable unavailable = ImageUtils.scaleImage(this,
+                R.drawable.image_unavailable, image_width, image_height);
 
         for (int i = 0; i < total; i++) {
 
@@ -385,13 +406,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             pictureGrid.addView(dImageView, gridParam);
 
         }
-
-        if (yPosition != -1) {
-            scrollView.scrollTo(0, yPosition);
-        } else {
-            scrollView.scrollTo(0, 0);
-        }
-
     }
 
     @Override
@@ -421,7 +435,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     }
 
     private Boolean isNetworkAvailable() {
-        ConnectivityManager manager = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+        ConnectivityManager manager =
+                (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
         try {
             if (manager != null) {
                 NetworkInfo info = manager.getActiveNetworkInfo();

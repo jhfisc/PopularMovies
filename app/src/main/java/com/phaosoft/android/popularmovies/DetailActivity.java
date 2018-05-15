@@ -18,6 +18,7 @@
 package com.phaosoft.android.popularmovies;
 
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -25,6 +26,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.phaosoft.android.popularmovies.model.Movie;
+import com.phaosoft.android.popularmovies.utils.ImageUtils;
 import com.squareup.picasso.Picasso;
 
 import java.util.List;
@@ -42,6 +44,10 @@ public class DetailActivity extends AppCompatActivity {
     public static final String MOVIE_POSITION = "movie_position";
     private static final int DEFAULT_POSITION = -1;
 
+    // default size for image
+    private static final int WIDTH = 400;
+    private static final int HEIGHT = 600;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,35 +57,47 @@ public class DetailActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         if (intent == null) {
+            Log.d("Detail", "no intent for details");
             finish();
         }
 
+        // Assume 0 movie index and adjuest according to what is store in the intent
         int position = 0;
         try {
             if (intent != null) {
                 position = intent.getIntExtra(MOVIE_POSITION, DEFAULT_POSITION);
             }
         } catch (NullPointerException e) {
-            Log.e("MoviePosition", e.getMessage());
+            Log.d("Detail", e.getMessage());
             finish();
         }
 
         List<Movie> movies = MainActivity.movies;
         if (movies == null) {
+            Log.d("Detail", "no movies for details");
             finish();
             return;
         }
 
+        // update layout with details
         Movie movieDetail = movies.get(position);
+
         setTitle(movieDetail.getTitle());
-        Log.d("Movie", movieDetail.getPosterUrl());
+
+        // get and scale the blank image
+        Drawable unavailable = ImageUtils.scaleImage(this,
+                R.drawable.image_unavailable, WIDTH, HEIGHT);
+        // get the movie image and use the blank image while loading
         Picasso.with(this)
                 .load(movieDetail.getPosterUrl())
-                .placeholder(R.drawable.image_unavailable)
-                .resize(400, 600)
+                .placeholder(unavailable)
+                .resize(WIDTH, HEIGHT)
                 .into(moviePoster);
+
         releaseDate.setText(movieDetail.getDate());
+
         voteAverage.setText(String.valueOf(movieDetail.getVote()));
+
         movieDescription.setText(movieDetail.getSynopsis());
     }
 
