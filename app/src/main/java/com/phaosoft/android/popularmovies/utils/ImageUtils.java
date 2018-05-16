@@ -24,16 +24,27 @@ import android.graphics.drawable.Drawable;
 import android.support.v4.content.res.ResourcesCompat;
 import android.util.Log;
 
-import com.phaosoft.android.popularmovies.R;
+/**
+ * Image utilities module
+ */
 
 public class ImageUtils {
-    public static Drawable scaleImage(Context context, int image, int width, int height) {
-        // image_unavailable is too big for the size of the thumbnails, therefore, resize it
-        Drawable drawable = ResourcesCompat.getDrawable(context.getResources(),
-                image, null);
-        Bitmap bitmap;
+
+    /**
+     * scale a resource drawble ID to width by height.
+     *
+     * @param context the context that is being used
+     * @param image_id the resource drawable ID that needs to be scaled
+     * @param width the width to scale the image
+     * @param height the height to scale the image
+     * @return the scaled drawable image
+     */
+    public static Drawable scaleImage(Context context, int image_id, int width, int height) {
+        Drawable drawable =
+                ResourcesCompat.getDrawable(context.getResources(), image_id, null);
+
         if (drawable != null) {
-            bitmap = ((BitmapDrawable) drawable).getBitmap();
+            Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
             try {
                 drawable = new BitmapDrawable(context.getResources(),
                         Bitmap.createScaledBitmap(bitmap, width, height, true));

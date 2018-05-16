@@ -34,6 +34,10 @@ import java.util.List;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
+/**
+ * Movie detail module
+ */
+
 public class DetailActivity extends AppCompatActivity {
 
     @BindView(R.id.movie_poster) ImageView moviePoster;
@@ -61,7 +65,7 @@ public class DetailActivity extends AppCompatActivity {
             finish();
         }
 
-        // Assume 0 movie index and adjuest according to what is store in the intent
+        // Assume 0 movie index and adjuest according to what is stored in the intent
         int position = 0;
         try {
             if (intent != null) {
@@ -79,15 +83,16 @@ public class DetailActivity extends AppCompatActivity {
             return;
         }
 
-        // update layout with details
+        // update layout with the details
         Movie movieDetail = movies.get(position);
 
         setTitle(movieDetail.getTitle());
 
-        // get and scale the blank image
+        // image_unavailable is too big for the size of the thumbnail, therefore, resize it
         Drawable unavailable = ImageUtils.scaleImage(this,
                 R.drawable.image_unavailable, WIDTH, HEIGHT);
-        // get the movie image and use the blank image while loading
+
+        // get the movie image and use the image_unavailable image while loading
         Picasso.with(this)
                 .load(movieDetail.getPosterUrl())
                 .placeholder(unavailable)

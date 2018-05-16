@@ -112,6 +112,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             mNetworkAvailibility.setVisibility(View.VISIBLE);
         }
 
+        // confgiure the spinner
         ArrayAdapter<CharSequence> adapter =
                 ArrayAdapter.createFromResource(this, R.array.sorted_array,
                 R.layout.spinner_layout);
@@ -130,6 +131,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             sortSpinner.setSelection(currentSort);
         }
 
+        // make sure that the MovieDB image is selectable
         mMovieDBImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -144,20 +146,34 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         // set observers on the scrollView
         ViewTreeObserver observer = scrollView.getViewTreeObserver();
+
+        /*
+         * watch the scrolling so that we know where we are in the view for when we return and
+         * so that we know when we have scrolled to the bottom of the view.
+         */
         observer.addOnScrollChangedListener(new ViewTreeObserver.OnScrollChangedListener() {
             @Override
             public void onScrollChanged() {
                 // save the current Y location of the scrollview each time the view is moved
                 yPosition = scrollView.getScrollY();
+
+                // figure out if the user has scrolled to the bottom of the movies
                 int bottom = yPosition + scrollView.getHeight();
                 if (! dealingWithBottom && scrollView.getChildAt(0).getBottom() <= bottom) {
+                    // ensure that only a single query is occurring at a time for reaching the bottom
                     dealingWithBottom = true;
+                    // get the next page of movies
                     page++;
+                    // query the Movie DB
                     queryMovieDB();
                 }
             }
         });
 
+        /*
+         * watch the layout visibility changes so that we can scroll to the correct position when
+         * the layout has changed.
+         */
         observer.addOnGlobalLayoutListener(
                 new ViewTreeObserver.OnGlobalLayoutListener() {
                     @Override
@@ -173,11 +189,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 }
         );
 
-
         queryMovieDB();
     }
 
     private void queryMovieDB() {
+        // build the query string
         queryString = buildQueryString(currentSort);
 
         Bundle queryBundle = new Bundle();
@@ -194,6 +210,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     @Override protected void onResume() {
         super.onResume();
+
+        // ensure that the sort spinner matches the movies being displayed
         if (currentSort != -1) {
             sortSpinner.setSelection(currentSort);
         } else {
@@ -220,27 +238,37 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             return ;
         }
 
-        pictureGrid.removeAllViews();
-
+        // get the loader
         LoaderManager loaderManager = getSupportLoaderManager();
         Loader<String> movieSearchLoader = loaderManager.getLoader(MOVIE_SEARCH_LOADER);
 
+        // ensure that the network is up
         if (! isNetworkAvailable()) {
+            // show the network unavailable text view
             mNetworkAvailibility.setVisibility(View.VISIBLE);
             if (movieSearchLoader != null) {
+                /*
+                 * since the network is down cancel the loader otherwise a timeout exception
+                 * will be thrown
+                 */
                 movieSearchLoader.cancelLoad();
             }
             return ;
         } else {
+            // hide the network unavailable text view
             mNetworkAvailibility.setVisibility(View.INVISIBLE);
         }
 
         // ensure that the first page is retrieved
         page = 1;
+        movies = null;
+        yPosition = -1;
         currentSort = position;
         queryMovieDB();
-        spinnerBeingSet = false;
 
+        // done with the spinner being changed and reaching the bottom of the page
+        spinnerBeingSet = false;
+        dealingWithBottom = false;
     }
 
     @Override
@@ -351,6 +379,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             }
         }
 
+        Log.d("Main:Load", movies.toString());
+
         // calculate the image size based upon the grid size
         int width = pictureGrid.getWidth();
         int total = movies.size();
@@ -373,15 +403,19 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         Drawable unavailable = ImageUtils.scaleImage(this,
                 R.drawable.image_unavailable, image_width, image_height);
 
+        // populate the gridlayout with the movie posters
         for (int i = 0; i < total; i++) {
 
             Movie movie = movies.get(i);
+            // create a dynamic image view to hold the image
             ImageView dImageView = new ImageView(this);
+            // set the size of the image
             DrawerLayout.LayoutParams dImageParams =
-                    new DrawerLayout.LayoutParams(width/column,
-                            ((width/column)* 3)/2);
+                    new DrawerLayout.LayoutParams(image_width, image_height);
             dImageView.setLayoutParams(dImageParams);
+            // make it easy to tell which image was selected
             dImageView.setTag(i);
+            // load the image
             Picasso.with(this)
                     .load(movie.getPosterUrl())
                     .resize(image_width, image_height)
@@ -389,6 +423,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                     .placeholder(unavailable)
                     .into(dImageView);
 
+            /*
+             * setup a callback for when the image is selected so that we can start the
+             * detail activity.
+             */
             dImageView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -397,6 +435,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 }
             });
 
+            // place the dynamic image into the gridlayout
             dImageView.setLayoutParams(new GridLayout.LayoutParams());
 
             GridLayout.Spec rowSpan = GridLayout.spec(GridLayout.UNDEFINED, 1);
@@ -413,17 +452,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     public String buildQueryString(int position) {
         String itemString = String.valueOf(sortSpinner.getItemAtPosition(position));
-        String sorter;
-        switch (itemString) {
-            case "Highest Rated":
-                sorter = TOP_RATED;
-                break;
-            case "Most Popular":
-                sorter = POPULAR;
-                break;
-            default:
-                sorter = POPULAR;
-                break;
+
+        String sorter = POPULAR;
+        if (itemString.equals("Highest Rated")) {
+            sorter = TOP_RATED;
         }
 
         int queryPage = Math.max(1, page);
@@ -431,6 +463,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 .appendQueryParameter(PARAM_KEY, API_KEY)
                 .appendQueryParameter(PARAM_PAGE, Integer.toString(queryPage))
                 .build();
+        Log.d("buildQueryString", "Uri: " + builtUri.toString());
         return builtUri.toString();
     }
 
@@ -443,7 +476,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 return info.isAvailable() && info.isConnected();
             }
         } catch (NullPointerException e) {
-            return false;
+            // ignore exception and fall through to returning false
         }
         return false;
     }

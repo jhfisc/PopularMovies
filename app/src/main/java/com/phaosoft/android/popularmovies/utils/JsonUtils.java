@@ -28,15 +28,24 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class JsonUtils {
-    final static String BASE_URL = "https://image.tmdb.org/t/p/w500";
+/**
+ * JSON utilities module
+ */
 
+public class JsonUtils {
+    private final static String BASE_URL = "https://image.tmdb.org/t/p/w500";
+
+    /**
+     * Parse a Json String converting it to a list of movies.
+     *
+     * @param json string to parse
+     * @return Movie List
+     */
     public static List<Movie> parseJsonMovie(String json) {
-        JSONObject jobj = null;
+        JSONObject jobj;
 
         try {
             jobj = new JSONObject(json);
-            Movie current;
             List<Movie> movies = new ArrayList<>();
 
             if (jobj.has("results")) {

@@ -17,7 +17,9 @@
 
 package com.phaosoft.android.popularmovies.model;
 
-import android.util.Log;
+/**
+ * Movie data model module
+ */
 
 public class Movie {
     private String title;
@@ -27,6 +29,7 @@ public class Movie {
     private Double vote;
 
     public Movie() { }
+
     public Movie(String title, String date, String posterUrl, Double vote, String synopsis) {
         this.title = title;
         this.date = date;
@@ -59,6 +62,12 @@ public class Movie {
         return this.title + ":" + this.date + ":" + this.vote;
     }
 
+    /**
+     * Compare this movie with another movie to see if they are the same.
+     *
+     * @param comp the movie to compare
+     * @return true if the movies are identical, otherwise false.
+     */
     public boolean equals(Movie comp) {
         return this.title.equals(comp.getTitle()) &&
                 this.date.equals(comp.getDate()) &&
