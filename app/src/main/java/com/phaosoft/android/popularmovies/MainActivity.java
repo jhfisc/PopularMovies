@@ -379,7 +379,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             }
         }
 
-        Log.d("Main:Load", movies.toString());
+        Log.d("Main:Load", (movies == null)?"no movies":movies.toString());
 
         // calculate the image size based upon the grid size
         int width = pictureGrid.getWidth();
