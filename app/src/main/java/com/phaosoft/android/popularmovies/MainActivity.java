@@ -17,12 +17,9 @@
 
 package com.phaosoft.android.popularmovies;
 
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -48,18 +45,15 @@ import android.widget.TextView;
 import com.phaosoft.android.popularmovies.model.Movie;
 import com.phaosoft.android.popularmovies.utils.ImageUtils;
 import com.phaosoft.android.popularmovies.utils.JsonUtils;
+import com.phaosoft.android.popularmovies.utils.NetworkUtils;
 import com.squareup.picasso.Picasso;
 
 import org.apache.commons.collections4.ListUtils;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -84,13 +78,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     private static final int MOVIE_SEARCH_LOADER = 22;
     private static final String SEARCH_QUERY_URL_EXTRA = "query";
 
-    private static final String MOVIEDB_BASE_URL = "http://api.themoviedb.org/3/movie/";
-    private static final String PARAM_KEY = "api_key";
-    private static final String PARAM_PAGE = "page";
-    private static final String POPULAR = "popular";
-    private static final String TOP_RATED = "top_rated";
-    private static final String API_KEY = "7d7dc1d96a37db918fc2d52df9ecffad";
-
     private static int currentSort = -1;
     public static List<Movie> movies = null;
 
@@ -108,7 +95,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         ButterKnife.bind(this);  // bind the UI objects
 
-        if (! isNetworkAvailable()) {
+        if (! NetworkUtils.isNetworkAvailable(this)) {
             mNetworkAvailibility.setVisibility(View.VISIBLE);
         }
 
@@ -194,7 +181,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     private void queryMovieDB() {
         // build the query string
-        queryString = buildQueryString(currentSort);
+        queryString = NetworkUtils.buildQueryString(String.valueOf(
+                sortSpinner.getItemAtPosition(currentSort)), page);
 
         Bundle queryBundle = new Bundle();
         queryBundle.putString(SEARCH_QUERY_URL_EXTRA, queryString);
@@ -216,7 +204,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             sortSpinner.setSelection(currentSort);
         } else {
             currentSort = sortSpinner.getSelectedItemPosition();
-            queryString = buildQueryString(currentSort);
+            queryString = NetworkUtils.buildQueryString(String.valueOf(
+                    sortSpinner.getItemAtPosition(currentSort)), page);
         }
     }
 
@@ -243,7 +232,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         Loader<String> movieSearchLoader = loaderManager.getLoader(MOVIE_SEARCH_LOADER);
 
         // ensure that the network is up
-        if (! isNetworkAvailable()) {
+        if (! NetworkUtils.isNetworkAvailable(this)) {
             // show the network unavailable text view
             mNetworkAvailibility.setVisibility(View.VISIBLE);
             if (movieSearchLoader != null) {
@@ -315,7 +304,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 /* Parse the URL from the passed in String and perform the search */
                 try {
                     URL movieUrl = new URL(searchQueryUrlString);
-                    String movieSearchResults = getResponseFromHttpUrl(movieUrl);
+                    String movieSearchResults = NetworkUtils.getResponseFromHttpUrl(movieUrl);
                     return movieSearchResults;
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -329,28 +318,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 super.deliverResult(data);
             }
         };
-    }
-
-    public static String getResponseFromHttpUrl(URL url) throws IOException {
-        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-        try {
-            InputStream in = urlConnection.getInputStream();
-
-            Scanner scanner = new Scanner(in);
-            scanner.useDelimiter("\\A");
-
-            boolean hasInput = scanner.hasNext();
-            if (hasInput) {
-                return scanner.next();
-            } else {
-                return null;
-            }
-        } catch (UnknownHostException e) {
-            // ignore unknown host exception, most likely a device configuration issue
-            return null;
-        } finally {
-            urlConnection.disconnect();
-        }
     }
 
     private boolean moviesSame(List<Movie> current) {
@@ -449,35 +416,4 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     @Override
     public void onLoaderReset(@NonNull Loader<String> loader) { }
-
-    public String buildQueryString(int position) {
-        String itemString = String.valueOf(sortSpinner.getItemAtPosition(position));
-
-        String sorter = POPULAR;
-        if (itemString.equals("Highest Rated")) {
-            sorter = TOP_RATED;
-        }
-
-        int queryPage = Math.max(1, page);
-        Uri builtUri = Uri.parse(MOVIEDB_BASE_URL + sorter).buildUpon()
-                .appendQueryParameter(PARAM_KEY, API_KEY)
-                .appendQueryParameter(PARAM_PAGE, Integer.toString(queryPage))
-                .build();
-        Log.d("buildQueryString", "Uri: " + builtUri.toString());
-        return builtUri.toString();
-    }
-
-    private Boolean isNetworkAvailable() {
-        ConnectivityManager manager =
-                (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
-        try {
-            if (manager != null) {
-                NetworkInfo info = manager.getActiveNetworkInfo();
-                return info.isAvailable() && info.isConnected();
-            }
-        } catch (NullPointerException e) {
-            // ignore exception and fall through to returning false
-        }
-        return false;
-    }
 }
