@@ -41,6 +41,12 @@ public class NetworkUtils {
     private static final String TOP_RATED = "top_rated";
     private static final String API_KEY = "7d7dc1d96a37db918fc2d52df9ecffad";
 
+    /**
+     * check if the network is available.
+     *
+     * @param context for the current view
+     * @return true|false depending if the network is up or not.
+     */
     public static Boolean isNetworkAvailable(Context context) {
         ConnectivityManager manager =
                 (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -55,6 +61,13 @@ public class NetworkUtils {
         return false;
     }
 
+    /**
+     * Gets the response from an HTTP URL request.
+     *
+     * @param url a URL to open
+     * @return the HTTP request response
+     * @throws IOException when the connection fails
+     */
     public static String getResponseFromHttpUrl(URL url) throws IOException {
         HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
         try {
@@ -78,7 +91,7 @@ public class NetworkUtils {
     }
 
     /**
-     * builds a query string based upon the user selection and desired page number.
+     * Builds a query string based upon the user selection and desired page number.
      *
      * @param sort sort title [Highest Rated, Most Popular]
      * @param page desired page to retrieve
