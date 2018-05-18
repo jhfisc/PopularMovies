@@ -48,11 +48,14 @@ public class JsonUtils {
             jobj = new JSONObject(json);
             List<Movie> movies = new ArrayList<>();
 
+            // multiple movies returned
             if (jobj.has("results")) {
                 JSONArray results = jobj.getJSONArray("results");
+                // iterate through the movie results list
                 int len = results.length();
                 for (int i = 0; i < len; i++) {
                     JSONObject result = (JSONObject)results.get(i);
+                    // add the current movie
                     movies.add(new Movie(result.getString("title"),
                             result.getString("release_date"),
                             BASE_URL + result.getString("poster_path"),
@@ -61,7 +64,8 @@ public class JsonUtils {
                 }
 
                 return movies;
-            } else {
+            } else if (jobj.has("title")) {
+                // add the single movie
                 movies.add(new Movie(jobj.getString("title"),
                         jobj.getString("release_date"),
                         BASE_URL + jobj.getString("poster_path"),
@@ -72,8 +76,8 @@ public class JsonUtils {
             }
         } catch (JSONException e) {
             Log.e("JsonUtils", e.getMessage());
-            return null;
         }
+        return null;
     }
 
 }

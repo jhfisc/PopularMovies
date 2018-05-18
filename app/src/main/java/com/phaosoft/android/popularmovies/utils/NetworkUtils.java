@@ -52,8 +52,8 @@ public class NetworkUtils {
                 (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
         try {
             if (manager != null) {
-                NetworkInfo info = manager.getActiveNetworkInfo();
-                return info.isAvailable() && info.isConnected();
+                NetworkInfo network = manager.getActiveNetworkInfo();
+                return network.isAvailable() && network.isConnected();
             }
         } catch (NullPointerException e) {
             // ignore exception and fall through to returning false
@@ -103,7 +103,9 @@ public class NetworkUtils {
             sorter = TOP_RATED;
         }
 
+        // ensure that the page number is equal or greater then 1
         int queryPage = Math.max(1, page);
+
         Uri builtUri = Uri.parse(MOVIEDB_BASE_URL + sorter).buildUpon()
                 .appendQueryParameter(PARAM_KEY, API_KEY)
                 .appendQueryParameter(PARAM_PAGE, Integer.toString(queryPage))
