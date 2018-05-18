@@ -29,10 +29,6 @@
                 android:value=".MainActivity" />
         </activity>
 
-        <service
-            android:name=".sync.MovieSyncIntentService"
-            android:exported="false" />
-
     </application>
 
 </manifest>
