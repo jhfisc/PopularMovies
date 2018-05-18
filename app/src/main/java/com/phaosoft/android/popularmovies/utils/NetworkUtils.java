@@ -21,7 +21,10 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.os.Build;
 import android.util.Log;
+
+import com.phaosoft.android.popularmovies.BuildConfig;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,7 +42,7 @@ public class NetworkUtils {
     private static final String PARAM_PAGE = "page";
     private static final String POPULAR = "popular";
     private static final String TOP_RATED = "top_rated";
-    private static final String API_KEY = "7d7dc1d96a37db918fc2d52df9ecffad";
+    private static final String API_KEY = BuildConfig.API_KEY;
 
     /**
      * check if the network is available.
