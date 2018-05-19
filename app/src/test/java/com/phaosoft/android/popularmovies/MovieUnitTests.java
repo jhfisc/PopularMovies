@@ -31,7 +31,7 @@ import static org.junit.Assert.assertTrue;
 public class MovieUnitTests {
     private String testTitle = "Movie Title";
     private String testDate = "12-10-2014";
-    private String testPoster = "http://somepath.com/";
+    private String testPoster = "/bOGkgRGdhrBYJSLpXaxhXVstddV.jpg";
     private String testSynopsis = "This is a synopsis";
     private double testVote = 7.6;
 
@@ -50,8 +50,8 @@ public class MovieUnitTests {
     public void testEquals() {
         Movie movie = new Movie(testTitle, testDate, testPoster, testVote, testSynopsis);
 
-        Movie notSame = new Movie("A", "B", "C", 5.5, "D");
         Movie same = new Movie(testTitle, testDate, testPoster, testVote, testSynopsis);
+        Movie notSame = new Movie("A", "B", "C", 5.5, "D");
 
         assertTrue(movie.equals(same));
         assertFalse(movie.equals(notSame));
