@@ -31,7 +31,7 @@ import android.util.Log;
 public class ImageUtils {
 
     /**
-     * scale a resource drawble ID to width by height.
+     * scale a resource drawable ID to width by height.
      *
      * @param context the context that is being used
      * @param image_id the resource drawable ID that needs to be scaled
