@@ -28,6 +28,7 @@ import org.junit.runner.RunWith;
 import java.util.List;
 
 import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertNull;
 import static org.junit.Assert.assertEquals;
 
 import org.powermock.api.mockito.PowerMockito;
@@ -90,13 +91,12 @@ public class JsonUtilsUnitTests {
     @Test
     public void jsonUtilsNullMovie() {
         List<Movie> movie = JsonUtils.parseJsonMovie(NULL_MOVIE);
-
-        assertEquals(null, movie);
+        assertNull(movie);
 
         movie = JsonUtils.parseJsonMovie(ONLY_RESULTS);
-        assertEquals(null, movie);
+        assertNull(movie);
 
         movie = JsonUtils.parseJsonMovie(ONLY_TITLE);
-        assertEquals(null, movie);
+        assertNull(movie);
     }
 }
