@@ -30,17 +30,32 @@ public class InstrumentedTest {
 
     @Test
     public void testScaleImage() {
+        Context appContext = InstrumentationRegistry.getTargetContext();
+
+        // scaled image --> image
         int width = 10;
         int height = 20;
-        Context appContext = InstrumentationRegistry.getTargetContext();
         Drawable testDrawable = ImageUtils.scaleImage(appContext, R.drawable.image_unavailable,
                 width, height);
-
+        assertNotNull(testDrawable);
         assertEquals(width, testDrawable.getIntrinsicWidth());
         assertEquals(height, testDrawable.getIntrinsicHeight());
 
+        // bad width/height --> null
+        int bad_size = -100;
+        testDrawable = ImageUtils.scaleImage(appContext, R.drawable.powered_by_408x161,
+                bad_size, bad_size);
+        assertNull(testDrawable);
+
+        // resource not found --> null
         testDrawable = ImageUtils.scaleImage(appContext, 10, width, height);
         assertNull(testDrawable);
+
+        // will not scale --> image
+        testDrawable = ImageUtils.scaleImage(appContext, R.mipmap.ic_launcher, width, height);
+        assertNotNull(testDrawable);
+        assertNotEquals(width, testDrawable.getIntrinsicWidth());
+        assertNotEquals(height, testDrawable.getIntrinsicHeight());
     }
 
     @Test

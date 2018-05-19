@@ -41,6 +41,10 @@ public class ImageUtils {
      * @return the scaled drawable image
      */
     public static Drawable scaleImage(Context context, int image_id, int width, int height) {
+        if (width <= 0 || height <= 0) {
+            return  null;
+        }
+
         Drawable drawable = null;
         try {
             drawable =
@@ -56,6 +60,9 @@ public class ImageUtils {
             Log.d("scaleImage", e.getMessage());
         } catch (Resources.NotFoundException e) {
             Log.d("scaleImage", "Image not found");
+            Log.d("scaleImage", e.getMessage());
+        } catch (ClassCastException e) {
+            Log.d("scaleImage", "Wrong image type");
             Log.d("scaleImage", e.getMessage());
         }
 
