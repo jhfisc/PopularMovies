@@ -18,6 +18,7 @@
 package com.phaosoft.android.popularmovies.utils;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -40,18 +41,22 @@ public class ImageUtils {
      * @return the scaled drawable image
      */
     public static Drawable scaleImage(Context context, int image_id, int width, int height) {
-        Drawable drawable =
-                ResourcesCompat.getDrawable(context.getResources(), image_id, null);
+        Drawable drawable = null;
+        try {
+            drawable =
+                    ResourcesCompat.getDrawable(context.getResources(), image_id, null);
 
-        if (drawable != null) {
-            Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
-            try {
+            if (drawable != null) {
+                Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
                 drawable = new BitmapDrawable(context.getResources(),
                         Bitmap.createScaledBitmap(bitmap, width, height, true));
-            } catch (IllegalArgumentException e) {
-                Log.d("scaleImage", "Image not scaled");
-                Log.d("scaleImage", e.getMessage());
             }
+        } catch (IllegalArgumentException e) {
+            Log.d("scaleImage", "Image not scaled");
+            Log.d("scaleImage", e.getMessage());
+        } catch (Resources.NotFoundException e) {
+            Log.d("scaleImage", "Image not found");
+            Log.d("scaleImage", e.getMessage());
         }
 
         return drawable;
