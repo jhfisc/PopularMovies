@@ -29,6 +29,7 @@ import static org.junit.Assert.assertTrue;
  */
 
 public class MovieUnitTests {
+    private String testID = "abc123";
     private String testTitle = "Movie Title";
     private String testDate = "12-10-2014";
     private String testPoster = "/bOGkgRGdhrBYJSLpXaxhXVstddV.jpg";
@@ -37,8 +38,9 @@ public class MovieUnitTests {
 
     @Test
     public void testGetters() {
-        Movie movie = new Movie(testTitle, testDate, testPoster, testVote, testSynopsis);
+        Movie movie = new Movie(testID, testTitle, testDate, testPoster, testVote, testSynopsis);
 
+        assertTrue(movie.getID().equals(testID));
         assertTrue(movie.getTitle().equals(testTitle));
         assertTrue(movie.getDate().equals(testDate));
         assertTrue(movie.getPosterUrl().equals(testPoster));
@@ -48,10 +50,11 @@ public class MovieUnitTests {
 
     @Test
     public void testEquals() {
-        Movie movie = new Movie(testTitle, testDate, testPoster, testVote, testSynopsis);
+        Movie movie = new Movie(testID, testTitle, testDate, testPoster, testVote, testSynopsis);
 
-        Movie same = new Movie(testTitle, testDate, testPoster, testVote, testSynopsis);
-        Movie notSame = new Movie("A", "B", "C", 5.5, "D");
+        Movie same = new Movie(testID, testTitle, testDate, testPoster, testVote, testSynopsis);
+        Movie notSame = new Movie("123", "A", "B", "C", 5.5,
+                "D");
 
         assertTrue(movie.equals(same));
         assertFalse(movie.equals(notSame));
@@ -59,7 +62,7 @@ public class MovieUnitTests {
 
     @Test
     public void testToString() {
-        Movie movie = new Movie(testTitle, testDate, testPoster, testVote, testSynopsis);
+        Movie movie = new Movie(testID, testTitle, testDate, testPoster, testVote, testSynopsis);
 
         assertTrue(movie.toString().equals(testTitle + ":" + testDate + ":" + testVote));
     }

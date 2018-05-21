@@ -71,7 +71,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     @BindView(R.id.scroll_view) ScrollView scrollView;
     @BindView(R.id.grid_layout) GridLayout pictureGrid;
     @BindView(R.id.movie_db_image) ImageView mMovieDBImage;
-    @BindView(R.id.network_available) TextView mNetworkAvailibility;
+    @BindView(R.id.network_available) private TextView mNetworkAvailability;
 
     private static final int MINIMUM_IMAGE_WIDTH = 540;
 
@@ -96,10 +96,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         ButterKnife.bind(this);  // bind the UI objects
 
         if (! NetworkUtils.isNetworkAvailable(this)) {
-            mNetworkAvailibility.setVisibility(View.VISIBLE);
+            mNetworkAvailability.setVisibility(View.VISIBLE);
         }
 
-        // confgiure the spinner
+        // configure the spinner
         ArrayAdapter<CharSequence> adapter =
                 ArrayAdapter.createFromResource(this, R.array.sorted_array,
                 R.layout.spinner_layout);
@@ -234,7 +234,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         // ensure that the network is up
         if (! NetworkUtils.isNetworkAvailable(this)) {
             // show the network unavailable text view
-            mNetworkAvailibility.setVisibility(View.VISIBLE);
+            mNetworkAvailability.setVisibility(View.VISIBLE);
             if (movieSearchLoader != null) {
                 /*
                  * since the network is down cancel the loader otherwise a timeout exception
@@ -245,7 +245,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             return ;
         } else {
             // hide the network unavailable text view
-            mNetworkAvailibility.setVisibility(View.INVISIBLE);
+            mNetworkAvailability.setVisibility(View.INVISIBLE);
         }
 
         // ensure that the first page is retrieved
@@ -294,7 +294,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             public String loadInBackground() {
 
                 /* Extract the search query from the args using our constant */
-                String searchQueryUrlString = args.getString(SEARCH_QUERY_URL_EXTRA);
+                String searchQueryUrlString = null;
+                if (args != null) {
+                    searchQueryUrlString = args.getString(SEARCH_QUERY_URL_EXTRA);
+                }
 
                 /* If the user didn't enter anything, there's nothing to search for */
                 if (searchQueryUrlString == null || TextUtils.isEmpty(searchQueryUrlString)) {
@@ -304,8 +307,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 /* Parse the URL from the passed in String and perform the search */
                 try {
                     URL movieUrl = new URL(searchQueryUrlString);
-                    String movieSearchResults = NetworkUtils.getResponseFromHttpUrl(movieUrl);
-                    return movieSearchResults;
+                    return NetworkUtils.getResponseFromHttpUrl(movieUrl);
                 } catch (IOException e) {
                     e.printStackTrace();
                     return null;
@@ -337,6 +339,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         if (null == data) {
             return ;
         } else {
+            Log.d("Raw Movie Data", data);
             List<Movie> tmpMovies = JsonUtils.parseJsonMovie(data);
             if (movies == null && tmpMovies != null) {
                 movies = new ArrayList<>(tmpMovies);
@@ -406,9 +409,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             dImageView.setLayoutParams(new GridLayout.LayoutParams());
 
             GridLayout.Spec rowSpan = GridLayout.spec(GridLayout.UNDEFINED, 1);
-            GridLayout.Spec colspan = GridLayout.spec(GridLayout.UNDEFINED, 1);
+            GridLayout.Spec colSpan = GridLayout.spec(GridLayout.UNDEFINED, 1);
             GridLayout.LayoutParams gridParam = new GridLayout.LayoutParams(
-                    rowSpan, colspan);
+                    rowSpan, colSpan);
             pictureGrid.addView(dImageView, gridParam);
 
         }

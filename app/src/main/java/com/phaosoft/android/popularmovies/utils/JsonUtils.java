@@ -56,7 +56,8 @@ public class JsonUtils {
                 for (int i = 0; i < len; i++) {
                     JSONObject result = (JSONObject)results.get(i);
                     // add the current movie
-                    movies.add(new Movie(result.getString("title"),
+                    movies.add(new Movie(result.getString("id"),
+                            result.getString("title"),
                             result.getString("release_date"),
                             BASE_URL + result.getString("poster_path"),
                             result.getDouble("vote_average"),
@@ -66,7 +67,8 @@ public class JsonUtils {
                 return movies;
             } else if (jobj.has("title")) {
                 // add the single movie
-                movies.add(new Movie(jobj.getString("title"),
+                movies.add(new Movie(jobj.getString("id"),
+                        jobj.getString("title"),
                         jobj.getString("release_date"),
                         BASE_URL + jobj.getString("poster_path"),
                         jobj.getDouble("vote_average"),

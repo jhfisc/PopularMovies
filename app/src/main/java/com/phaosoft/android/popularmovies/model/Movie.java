@@ -27,16 +27,21 @@ public class Movie {
     private String posterUrl;
     private String synopsis;
     private Double vote;
+    private String id;
 
     public Movie() { }
 
-    public Movie(String title, String date, String posterUrl, Double vote, String synopsis) {
+    public Movie(String id, String title, String date, String posterUrl, Double vote,
+                 String synopsis) {
+        this.id = id;
         this.title = title;
         this.date = date;
         this.posterUrl = posterUrl;
         this.vote = vote;
         this.synopsis = synopsis;
     }
+
+    public String getID() { return id; }
 
     public String getTitle() {
         return title;
@@ -73,6 +78,7 @@ public class Movie {
                 this.date.equals(comp.getDate()) &&
                 this.posterUrl.equals(comp.getPosterUrl()) &&
                 this.synopsis.equals(comp.getSynopsis()) &&
+                this.id.equals(comp.getID()) &&
                 Math.abs(this.vote) == Math.abs(comp.vote);
     }
 }
