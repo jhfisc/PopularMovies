@@ -22,6 +22,8 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -44,6 +46,7 @@ public class DetailActivity extends AppCompatActivity {
     @BindView(R.id.release_date) TextView releaseDate;
     @BindView(R.id.vote_average) TextView voteAverage;
     @BindView(R.id.description_tv) TextView movieDescription;
+    @BindView(R.id.favoriteStar) ImageButton favoriteStar;
 
     public static final String MOVIE_POSITION = "movie_position";
     private static final int DEFAULT_POSITION = -1;
@@ -52,8 +55,12 @@ public class DetailActivity extends AppCompatActivity {
     private static final int WIDTH = 400;
     private static final int HEIGHT = 600;
 
+    private static boolean favorite = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.i("onCreate", "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
 
@@ -104,6 +111,20 @@ public class DetailActivity extends AppCompatActivity {
         voteAverage.setText(String.valueOf(movieDetail.getVote()));
 
         movieDescription.setText(movieDetail.getSynopsis());
+
+        setFavorite();
+        favoriteStar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.i("favorite", "clicked");
+                favorite = ! favorite;
+                setFavorite();
+            }
+        });
     }
 
+    private void setFavorite() {
+        int id = (favorite)?android.R.drawable.star_big_on:android.R.drawable.star_big_off;
+        favoriteStar.setImageResource(id);
+    }
 }

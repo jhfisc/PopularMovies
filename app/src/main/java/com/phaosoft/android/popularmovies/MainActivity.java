@@ -71,7 +71,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     @BindView(R.id.scroll_view) ScrollView scrollView;
     @BindView(R.id.grid_layout) GridLayout pictureGrid;
     @BindView(R.id.movie_db_image) ImageView mMovieDBImage;
-    @BindView(R.id.network_available) private TextView mNetworkAvailability;
+    @BindView(R.id.network_available) TextView mNetworkAvailability;
 
     private static final int MINIMUM_IMAGE_WIDTH = 540;
 
