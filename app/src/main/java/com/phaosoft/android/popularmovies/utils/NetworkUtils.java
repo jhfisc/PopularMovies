@@ -43,6 +43,12 @@ public class NetworkUtils {
     private static final String TOP_RATED = "top_rated";
     private static final String API_KEY = BuildConfig.API_KEY;
 
+    private final static String TRAILERS_URL = "https://www.youtube.com/watch";
+    private final static String PARAM_TRAILER = "v";
+
+    private final static String TRAILER_KEY = "%TRAILER_KEY%";
+    private final static String TRAILER_IMAGE = "https://img.youtube.com/vi/" +  TRAILER_KEY + "/default.jpg";
+
     /**
      * check if the network is available.
      *
@@ -118,4 +124,53 @@ public class NetworkUtils {
         return builtUri.toString();
     }
 
+    /**
+     * Builds a trailer video query string based upon the movie ID.
+     *
+     * @param movieID movieDB ID
+     * @return url String
+     */
+    public static String buildVideoString(String movieID) {
+        Uri builtUri = Uri.parse(MOVIEDB_BASE_URL + movieID + "/videos").buildUpon()
+                .appendQueryParameter(PARAM_KEY, API_KEY)
+                .build();
+
+        Log.d("buildVideoString", "Uri: " + builtUri.toString());
+
+        return builtUri.toString();
+    }
+
+    /**
+     * Builds a reviewer query string based upon the movie ID.
+     *
+     * @param movieID movieDB ID
+     * @return url String
+     */
+    public static String buildReviewString(String movieID) {
+        Uri builtUri = Uri.parse(MOVIEDB_BASE_URL + movieID + "reviews").buildUpon()
+                .appendQueryParameter(PARAM_KEY, API_KEY)
+                .build();
+
+        Log.d("buildVideoString", "Uri: " + builtUri.toString());
+
+        return builtUri.toString();
+    }
+
+    public static String buildTrailerString(String trailerKey) {
+        Uri builtUri = Uri.parse(TRAILERS_URL).buildUpon()
+                .appendQueryParameter(PARAM_TRAILER, trailerKey)
+                .appendQueryParameter(PARAM_KEY, API_KEY)
+                .build();
+
+        Log.d("buildVideoString", "Uri: " + builtUri.toString());
+
+        return builtUri.toString();
+    }
+
+    public static String buildTrailerThumbnailString(String trailerKey) {
+        String trailerThumbnail = TRAILER_IMAGE.replace(TRAILER_KEY, trailerKey);
+        Log.d("buildTrailerThumbnailString", "Uri: " + trailerThumbnail);
+
+        return trailerThumbnail;
+    }
 }

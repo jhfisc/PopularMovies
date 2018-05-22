@@ -19,18 +19,35 @@ package com.phaosoft.android.popularmovies;
 
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.Loader;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.text.TextUtils;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.View;
+import android.widget.GridLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.phaosoft.android.popularmovies.model.Movie;
+import com.phaosoft.android.popularmovies.model.Review;
+import com.phaosoft.android.popularmovies.model.Trailer;
 import com.phaosoft.android.popularmovies.utils.ImageUtils;
+import com.phaosoft.android.popularmovies.utils.JsonUtils;
+import com.phaosoft.android.popularmovies.utils.NetworkUtils;
 import com.squareup.picasso.Picasso;
 
+import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 
 import butterknife.BindView;
@@ -40,13 +57,15 @@ import butterknife.ButterKnife;
  * Movie detail module
  */
 
-public class DetailActivity extends AppCompatActivity {
+public class DetailActivity extends AppCompatActivity implements
+        LoaderManager.LoaderCallbacks<String> {
 
     @BindView(R.id.movie_poster) ImageView moviePoster;
     @BindView(R.id.release_date) TextView releaseDate;
     @BindView(R.id.vote_average) TextView voteAverage;
     @BindView(R.id.description_tv) TextView movieDescription;
     @BindView(R.id.favoriteStar) ImageButton favoriteStar;
+    @BindView(R.id.trailers) GridLayout trailersGrid;
 
     public static final String MOVIE_POSITION = "movie_position";
     private static final int DEFAULT_POSITION = -1;
@@ -57,10 +76,20 @@ public class DetailActivity extends AppCompatActivity {
 
     private static boolean favorite = false;
 
+    private static final int MOVIE_VIDEO_LOADER = 33;
+    private static final String SEARCH_TRAILERS_URL_EXTRA = "trailers";
+
+    private static String trialersString = null;
+    private static List<Trailer> trailers = null;
+
+    private static final int MOVIE_REVIEW_LOADER = 44;
+    private static final String SEARCH_REVIEW_URL_EXTRA = "reviews";
+
+    private static String reviewsString = null;
+    private static List<Review> reviews = null;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.i("onCreate", "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
 
@@ -116,15 +145,175 @@ public class DetailActivity extends AppCompatActivity {
         favoriteStar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.i("favorite", "clicked");
                 favorite = ! favorite;
                 setFavorite();
             }
         });
+
+        trailersMovieDB(movieDetail);
     }
 
     private void setFavorite() {
         int id = (favorite)?android.R.drawable.star_big_on:android.R.drawable.star_big_off;
         favoriteStar.setImageResource(id);
+    }
+
+    private void trailersMovieDB(Movie movie) {
+        // build the trailersString
+        trialersString = NetworkUtils.buildVideoString(movie.getID());
+
+        // build the reviewsString
+        reviewsString = NetworkUtils.buildReviewString(movie.getID());
+
+        Log.d("trailersMovieDB", trialersString);
+        Bundle queryBundle = new Bundle();
+        queryBundle.putString(SEARCH_TRAILERS_URL_EXTRA, trialersString);
+
+        LoaderManager loaderManager = getSupportLoaderManager();
+        Loader<String> movieSearchLoader = loaderManager.getLoader(MOVIE_VIDEO_LOADER);
+        if (movieSearchLoader == null) {
+            loaderManager.initLoader(MOVIE_VIDEO_LOADER, queryBundle, this);
+        } else {
+            loaderManager.restartLoader(MOVIE_VIDEO_LOADER, queryBundle, this);
+        }
+    }
+
+    @NonNull
+    @Override
+    public Loader<String> onCreateLoader(int id, @Nullable final Bundle args) {
+        return new AsyncTaskLoader<String>(this) {
+
+            String trailersJson;
+
+            @Override
+            protected void onStartLoading() {
+
+                /* If no arguments were passed, we don't have a query to perform. Simply return. */
+                if (args == null) {
+                    return;
+                }
+
+                /*
+                 * When we initially begin loading in the background, we want to display the
+                 * loading indicator to the user
+                 */
+
+                if (trailersJson != null) {
+                    deliverResult(trailersJson);
+                } else {
+                    forceLoad();
+                }
+            }
+
+            @Override
+            public String loadInBackground() {
+
+                /* Extract the search query from the args using our constant */
+                String trailersUrlString = null;
+                if (args != null) {
+                    trailersUrlString = args.getString(SEARCH_TRAILERS_URL_EXTRA);
+                }
+
+                /* If the user didn't enter anything, there's nothing to search for */
+                if (trailersUrlString == null || TextUtils.isEmpty(trailersUrlString)) {
+                    return null;
+                }
+
+                /* Parse the URL from the passed in String and perform the search */
+                try {
+                    URL movieUrl = new URL(trailersUrlString);
+                    return NetworkUtils.getResponseFromHttpUrl(movieUrl);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return null;
+                }
+            }
+
+            @Override
+            public void deliverResult(String data) {
+                trailersJson = data;
+                super.deliverResult(data);
+            }
+        };
+    }
+
+    @Override
+    public void onLoadFinished(@NonNull Loader<String> loader, String data) {
+        trailers = JsonUtils.parseJsonTrailers(data);
+        if (trailers == null) {
+            Log.d("Details onLoadFinished", "trailers null (" + data + ")");
+            return;
+        }
+
+        Log.d("Details onLoadFinished", trailers.toString());
+
+        int width = trailersGrid.getWidth();
+        int total = trailers.size();
+        int column = 2;
+
+        int padding = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, (float)5.0,
+                getResources().getDisplayMetrics());
+        int image_width = (width - (4 * padding)) / column;
+        // a movie poster's height is typically 1 1/2 times the width
+        int image_height = (image_width * 2) / 3;
+
+        trailersGrid.removeAllViews();
+
+        int row = total / column;
+        trailersGrid.setColumnCount(column);
+        trailersGrid.setRowCount(row + 1);
+
+        // image_unavailable is too big for the size of the thumbnails, therefore, resize it
+        Drawable unavailable = ImageUtils.scaleImage(this,
+                R.drawable.image_unavailable, image_width, image_height);
+
+        // populate the gridlayout with the movie posters
+        for (int i = 0; i < total; i++) {
+            final Trailer trailer = trailers.get(i);
+            // create a dynamic image view to hold the image
+            ImageView dImageView = new ImageView(this);
+            // set the size of the image
+            DrawerLayout.LayoutParams dImageParams =
+                    new DrawerLayout.LayoutParams(image_width, image_height);
+            dImageView.setLayoutParams(dImageParams);
+            dImageView.setPadding(padding, padding, padding, padding);
+            // make it easy to tell which image was selected
+            dImageView.setTag(i);
+            // load the image
+            Picasso.with(this)
+                    .load(trailer.getPictureUrl())
+                    .resize(image_width, image_height)
+                    .placeholder(unavailable)
+                    .into(dImageView);
+
+            dImageView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    int tag = (int)view.getTag();
+                    Uri uri = Uri.parse(trailers.get(tag).getVideoUrl());
+                    Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+
+                    if (intent.resolveActivity(getPackageManager()) != null) {
+                        startActivity(intent);
+                    }
+                }
+            });
+
+
+            // place the dynamic image into the gridlayout
+            dImageView.setLayoutParams(new GridLayout.LayoutParams());
+
+            GridLayout.Spec rowSpan = GridLayout.spec(GridLayout.UNDEFINED, 1);
+            GridLayout.Spec colSpan = GridLayout.spec(GridLayout.UNDEFINED, 1);
+            GridLayout.LayoutParams gridParam = new GridLayout.LayoutParams(
+                    rowSpan, colSpan);
+            trailersGrid.addView(dImageView, gridParam);
+
+        }
+    }
+
+    @Override
+    public void onLoaderReset(@NonNull Loader<String> loader) {
+
     }
 }

@@ -20,6 +20,7 @@ package com.phaosoft.android.popularmovies.utils;
 import android.util.Log;
 
 import com.phaosoft.android.popularmovies.model.Movie;
+import com.phaosoft.android.popularmovies.model.Trailer;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -75,6 +76,48 @@ public class JsonUtils {
                         jobj.getString("overview")));
 
                 return movies;
+            }
+        } catch (JSONException e) {
+            Log.e("JsonUtils", e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Parse a Json String converting it to a list of trailers.
+     * @param json string to parse
+     * @return Trailers list
+     */
+    public static List<Trailer> parseJsonTrailers(String json) {
+        JSONObject jobj;
+
+        try {
+            jobj = new JSONObject(json);
+            List<Trailer> trailers = new ArrayList<>();
+
+            // multiple movies returned
+            if (jobj.has("results")) {
+                JSONArray results = jobj.getJSONArray("results");
+                // iterate through the movie results list
+                int len = results.length();
+                for (int i = 0; i < len; i++) {
+                    JSONObject result = (JSONObject)results.get(i);
+                    String key = result.getString("key");
+                    // add the current movie
+                    trailers.add(new Trailer(key, result.getString("name"),
+                            NetworkUtils.buildTrailerString(key),
+                            NetworkUtils.buildTrailerThumbnailString(key)));
+                }
+
+                return trailers;
+            } else if (jobj.has("title")) {
+                String key = jobj.getString("key");
+                // add the single movie
+                trailers.add(new Trailer(key, jobj.getString("name"),
+                        NetworkUtils.buildTrailerString(key),
+                        NetworkUtils.buildTrailerThumbnailString(key)));
+
+                return trailers;
             }
         } catch (JSONException e) {
             Log.e("JsonUtils", e.getMessage());

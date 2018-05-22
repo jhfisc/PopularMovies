@@ -63,6 +63,7 @@ public class Movie {
         return vote;
     }
 
+    @Override
     public String toString() {
         return this.title + ":" + this.date + ":" + this.vote;
     }
