@@ -359,9 +359,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             column++;
         }
 
-        int image_width = width / column;
+        int image_width = Math.max(1, width / column);
         // a movie poster's height is typically 1 1/2 times the width
-        int image_height = (image_width * 3) / 2;
+        int image_height = Math.max(1, (image_width * 3) / 2);
 
         pictureGrid.removeAllViews();
 
