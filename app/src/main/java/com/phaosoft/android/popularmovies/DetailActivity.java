@@ -18,6 +18,9 @@
 package com.phaosoft.android.popularmovies;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
@@ -29,7 +32,6 @@ import android.support.v4.content.Loader;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
@@ -45,6 +47,7 @@ import com.phaosoft.android.popularmovies.utils.ImageUtils;
 import com.phaosoft.android.popularmovies.utils.JsonUtils;
 import com.phaosoft.android.popularmovies.utils.NetworkUtils;
 import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Callback;
 
 import java.io.IOException;
 import java.net.URL;
@@ -238,7 +241,7 @@ public class DetailActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void onLoadFinished(@NonNull Loader<String> loader, String data) {
+    public void onLoadFinished(@NonNull Loader<String> loader, final String data) {
         trailers = JsonUtils.parseJsonTrailers(data);
         if (trailers == null) {
             Log.d("Details onLoadFinished", "trailers null (" + data + ")");
@@ -255,7 +258,7 @@ public class DetailActivity extends AppCompatActivity implements
                 getResources().getDisplayMetrics());
         int image_width = (width - (4 * padding)) / column;
         // a movie poster's height is typically 1 1/2 times the width
-        int image_height = (image_width * 2) / 3;
+        final int image_height = (image_width * 2) / 3;
 
         trailersGrid.removeAllViews();
 
@@ -266,12 +269,25 @@ public class DetailActivity extends AppCompatActivity implements
         // image_unavailable is too big for the size of the thumbnails, therefore, resize it
         Drawable unavailable = ImageUtils.scaleImage(this,
                 R.drawable.image_unavailable, image_width, image_height);
+        BitmapDrawable playBitmapDrawable = (BitmapDrawable)ImageUtils.scaleImage(this,
+                R.drawable.play_button_transparent_darkened,
+                image_height / 2, image_height / 2);
+        Bitmap pbitmap = null;
+        if (playBitmapDrawable != null) {
+            pbitmap = playBitmapDrawable.getBitmap();
+        }
+        final Bitmap play_bitmap = pbitmap;
+        int play_size = image_height / 2;
+        int center_x = image_width / 2;
+        int center_y = image_height / 2;
+        final int play_x = center_x - (play_size / 2);
+        final int play_y = center_y - (play_size / 2);
 
         // populate the gridlayout with the movie posters
         for (int i = 0; i < total; i++) {
             final Trailer trailer = trailers.get(i);
             // create a dynamic image view to hold the image
-            ImageView dImageView = new ImageView(this);
+            final ImageView dImageView = new ImageView(this);
             // set the size of the image
             DrawerLayout.LayoutParams dImageParams =
                     new DrawerLayout.LayoutParams(image_width, image_height);
@@ -284,7 +300,24 @@ public class DetailActivity extends AppCompatActivity implements
                     .load(trailer.getPictureUrl())
                     .resize(image_width, image_height)
                     .placeholder(unavailable)
-                    .into(dImageView);
+                    .into(dImageView,
+                            new Callback() {
+                                @Override
+                                public void onSuccess() {
+                                    BitmapDrawable drawable =
+                                            (BitmapDrawable) dImageView.getDrawable();
+                                    Bitmap bitmap = drawable.getBitmap();
+                                    Canvas canvas = new Canvas(bitmap);
+                                    if (play_bitmap != null) {
+                                        canvas.drawBitmap(play_bitmap, play_x, play_y, null);
+                                    }
+                                    dImageView.setImageBitmap(bitmap);
+                                }
+
+                                @Override
+                                public void onError() {
+                                }
+                            });
 
             dImageView.setOnClickListener(new View.OnClickListener() {
                 @Override
