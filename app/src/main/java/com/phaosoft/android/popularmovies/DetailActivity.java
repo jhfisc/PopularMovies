@@ -42,6 +42,7 @@ import android.view.View;
 import android.widget.GridLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.phaosoft.android.popularmovies.model.Movie;
@@ -73,6 +74,7 @@ public class DetailActivity extends AppCompatActivity {
     @BindView(R.id.description_tv) TextView movieDescription;
     @BindView(R.id.favoriteStar) ImageButton favoriteStar;
     @BindView(R.id.trailers) GridLayout trailersGrid;
+    @BindView(R.id.trailers_label) TextView trailersLabel;
     @BindView(R.id.reviews_label) TextView reviewsLabel;
 
     public static final String MOVIE_POSITION = "movie_position";
@@ -87,13 +89,11 @@ public class DetailActivity extends AppCompatActivity {
     private static final int MOVIE_VIDEO_LOADER = 33;
     private static final String SEARCH_TRAILERS_URL_EXTRA = "trailers";
 
-    private static String trialersString = null;
     private static List<Trailer> trailers = null;
 
     private static final int MOVIE_REVIEW_LOADER = 44;
     private static final String SEARCH_REVIEW_URL_EXTRA = "reviews";
 
-    private static String reviewersString = null;
     private static List<Review> reviewers = null;
 
     @Override
@@ -109,7 +109,7 @@ public class DetailActivity extends AppCompatActivity {
             finish();
         }
 
-        // Assume 0 movie index and adjuest according to what is stored in the intent
+        // Assume 0 movie index and adjust according to what is stored in the intent
         int position = 0;
         try {
             if (intent != null) {
@@ -232,10 +232,12 @@ public class DetailActivity extends AppCompatActivity {
             @Override
             public void onLoadFinished(@NonNull Loader<String> loader, String data) {
                 trailers = JsonUtils.parseJsonTrailers(data);
-                if (trailers == null) {
+                if (trailers == null || trailers.isEmpty()) {
                     Log.d("Details onLoadFinished", "trailers null (" + data + ")");
+                    trailersLabel.setVisibility(View.INVISIBLE);
                     return;
                 }
+                trailersLabel.setVisibility(View.VISIBLE);
 
                 Log.d("Details onLoadFinished", trailers.toString());
 
@@ -261,11 +263,11 @@ public class DetailActivity extends AppCompatActivity {
                 BitmapDrawable playBitmapDrawable = (BitmapDrawable)ImageUtils.scaleImage(context,
                         R.drawable.play_button_transparent_darkened,
                         image_height / 2, image_height / 2);
-                Bitmap pbitmap = null;
+                Bitmap tmpBitmap = null;
                 if (playBitmapDrawable != null) {
-                    pbitmap = playBitmapDrawable.getBitmap();
+                    tmpBitmap = playBitmapDrawable.getBitmap();
                 }
-                final Bitmap play_bitmap = pbitmap;
+                final Bitmap playBitmap = tmpBitmap;
                 int play_size = image_height / 2;
                 int center_x = image_width / 2;
                 int center_y = image_height / 2;
@@ -297,8 +299,8 @@ public class DetailActivity extends AppCompatActivity {
                                                     (BitmapDrawable) dImageView.getDrawable();
                                             Bitmap bitmap = drawable.getBitmap();
                                             Canvas canvas = new Canvas(bitmap);
-                                            if (play_bitmap != null) {
-                                                canvas.drawBitmap(play_bitmap, play_x, play_y, null);
+                                            if (playBitmap != null) {
+                                                canvas.drawBitmap(playBitmap, play_x, play_y, null);
                                             }
                                             dImageView.setImageBitmap(bitmap);
                                         }
@@ -408,17 +410,28 @@ public class DetailActivity extends AppCompatActivity {
             @Override
             public void onLoadFinished(@NonNull Loader<String> loader, String data) {
                 reviewers = JsonUtils.parseJsonReviewers(data);
-                if (reviewers == null) {
+                if (reviewers == null || reviewers.isEmpty()) {
                     Log.d("Details onLoadFinished", "reviewers null (" + data + ")");
+                    reviewsLabel.setVisibility(View.INVISIBLE);
                     return;
                 }
+                reviewsLabel.setVisibility(View.VISIBLE);
 
                 Log.d("Details onLoadFinished", reviewers.toString());
 
                 int total = reviewers.size();
 
-                int topID = reviewsLabel.getId();
-                int parentID = constraintLayout.getId();
+                int width = constraintLayout.getWidth();
+
+                LinearLayout verticalLayout = new LinearLayout(context);
+                verticalLayout.setId(View.generateViewId());
+
+                LinearLayout.LayoutParams verticalParams =
+                        new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
+                                LinearLayout.LayoutParams.WRAP_CONTENT, 0);
+                verticalLayout.setLayoutParams(verticalParams);
+                verticalLayout.setOrientation(LinearLayout.VERTICAL);
+
                 // populate the reviews
                 for (int i = 0; i < total; i++) {
                     final Review review = reviewers.get(i);
@@ -426,33 +439,38 @@ public class DetailActivity extends AppCompatActivity {
                     final TextView reviewTextView = new TextView(context);
                     reviewTextView.setId(View.generateViewId());
                     reviewTextView.setText(review.getReview());
-                    reviewTextView.setPadding(10, 50, 10, 25);
-                    int reviewViewID = reviewTextView.getId();
-                    ConstraintSet constraintSet = new ConstraintSet();
-                    constraintSet.connect(reviewViewID, ConstraintSet.TOP, topID, ConstraintSet.BOTTOM);
-                    constraintSet.connect(reviewViewID, ConstraintSet.LEFT, parentID, ConstraintSet.LEFT);
-                    constraintSet.constrainHeight(reviewViewID, ConstraintSet.WRAP_CONTENT);
-                    constraintSet.constrainWidth(reviewViewID, ConstraintSet.MATCH_CONSTRAINT);
-                    constraintLayout.addView(reviewTextView);
-                    constraintSet.applyTo(constraintLayout);
-                    topID = reviewViewID;
+                    if ((i % 2) == 0) {
+                        reviewTextView.setBackgroundResource(R.color.lightGrey);
+                    }
+                    reviewTextView.setPadding(20, 50, 20, 25);
+                    verticalLayout.addView(reviewTextView);
 
                     final TextView reviewerTextView = new TextView(context);
                     reviewerTextView.setId(View.generateViewId());
                     reviewerTextView.setText(review.getReviewer());
                     reviewerTextView.setTypeface(null, Typeface.BOLD);
-                    reviewerTextView.setPadding(0, 25, 0, 50);
-                    int reviewerViewID = reviewerTextView.getId();
-                    ConstraintSet reviewerConstraintSet = new ConstraintSet();
-                    reviewerConstraintSet.connect(reviewerViewID, ConstraintSet.TOP, topID, ConstraintSet.BOTTOM);
-                    reviewerConstraintSet.connect(reviewerViewID, ConstraintSet.LEFT, parentID, ConstraintSet.LEFT);
-                    reviewerConstraintSet.connect(reviewerViewID, ConstraintSet.RIGHT, parentID, ConstraintSet.RIGHT);
-                    reviewerConstraintSet.constrainHeight(reviewerViewID, ConstraintSet.WRAP_CONTENT);
-                    reviewerConstraintSet.constrainWidth(reviewerViewID, ConstraintSet.WRAP_CONTENT);
-                    constraintLayout.addView(reviewerTextView);
-                    reviewerConstraintSet.applyTo(constraintLayout);
-                    topID = reviewerViewID;
+                    if ((i % 2) == 0) {
+                        reviewerTextView.setBackgroundResource(R.color.lightGrey);
+                    }
+                    reviewerTextView.setPadding(Math.max(25, width / 2), 25, 0, 50);
+                    verticalLayout.addView(reviewerTextView);
                 }
+
+                constraintLayout.addView(verticalLayout);
+
+                int reviewsLabelId = reviewsLabel.getId();
+                int verticalID = verticalLayout.getId();
+                int parentID = constraintLayout.getId();
+
+                ConstraintSet constraintSet = new ConstraintSet();
+                constraintSet.clone(constraintLayout);
+                constraintSet.connect(verticalID, ConstraintSet.TOP,
+                        reviewsLabelId, ConstraintSet.BOTTOM);
+                constraintSet.connect(verticalID, ConstraintSet.LEFT,
+                        parentID, ConstraintSet.LEFT);
+
+                constraintSet.applyTo(constraintLayout);
+
             }
 
             @Override
@@ -469,10 +487,10 @@ public class DetailActivity extends AppCompatActivity {
 
     private void trailersMovieDB(Movie movie) {
         // build the trailersString
-        trialersString = NetworkUtils.buildVideoString(movie.getID());
+        String trailersString = NetworkUtils.buildVideoString(movie.getID());
 
         Bundle queryBundle = new Bundle();
-        queryBundle.putString(SEARCH_TRAILERS_URL_EXTRA, trialersString);
+        queryBundle.putString(SEARCH_TRAILERS_URL_EXTRA, trailersString);
 
         LoaderManager.LoaderCallbacks<String> trailersCallback = createTrailersLoader();
         LoaderManager loaderManager = getSupportLoaderManager();
@@ -484,7 +502,7 @@ public class DetailActivity extends AppCompatActivity {
         }
 
         // build the reviewsString
-        reviewersString = NetworkUtils.buildReviewString(movie.getID());
+        String reviewersString = NetworkUtils.buildReviewString(movie.getID());
 
         Bundle trailersQueryBundle = new Bundle();
         trailersQueryBundle.putString(SEARCH_REVIEW_URL_EXTRA, reviewersString);
