@@ -73,7 +73,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     @BindView(R.id.movie_db_image) ImageView mMovieDBImage;
     @BindView(R.id.network_available) TextView mNetworkAvailability;
 
-    private static final int MINIMUM_IMAGE_WIDTH = 540;
+    private static final int MINIMUM_imageWidth = 540;
 
     private static final int MOVIE_SEARCH_LOADER = 22;
     private static final String SEARCH_QUERY_URL_EXTRA = "query";
@@ -209,7 +209,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         }
     }
 
-    public void launchDetailActivity(int position) {
+    private void launchDetailActivity(int position) {
         if (movies == null) {
             Log.d("Main", "no movies to select");
             return ;
@@ -322,7 +322,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         };
     }
 
-    public boolean moviesSame(List<Movie> current) {
+    private boolean moviesSame(List<Movie> current) {
         if (movies == null || current == null) {
             return movies == null && current == null;
         }
@@ -355,13 +355,13 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         int width = pictureGrid.getWidth();
         int total = movies.size();
         int column = 2;
-        while ((width / column) > MINIMUM_IMAGE_WIDTH) {
+        while ((width / column) > MINIMUM_imageWidth) {
             column++;
         }
 
-        int image_width = Math.max(1, width / column);
+        int imageWidth = Math.max(1, width / column);
         // a movie poster's height is typically 1 1/2 times the width
-        int image_height = Math.max(1, (image_width * 3) / 2);
+        int imageHeight = Math.max(1, (imageWidth * 3) / 2);
 
         pictureGrid.removeAllViews();
 
@@ -371,7 +371,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         // image_unavailable is too big for the size of the thumbnails, therefore, resize it
         Drawable unavailable = ImageUtils.scaleImage(this,
-                R.drawable.image_unavailable, image_width, image_height);
+                R.drawable.image_unavailable, imageWidth, imageHeight);
 
         // populate the gridlayout with the movie posters
         for (int i = 0; i < total; i++) {
@@ -381,14 +381,14 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             ImageView dImageView = new ImageView(this);
             // set the size of the image
             DrawerLayout.LayoutParams dImageParams =
-                    new DrawerLayout.LayoutParams(image_width, image_height);
+                    new DrawerLayout.LayoutParams(imageWidth, imageHeight);
             dImageView.setLayoutParams(dImageParams);
             // make it easy to tell which image was selected
             dImageView.setTag(i);
             // load the image
             Picasso.with(this)
                     .load(movie.getPosterUrl())
-                    .resize(image_width, image_height)
+                    .resize(imageWidth, imageHeight)
                     .centerCrop()
                     .placeholder(unavailable)
                     .into(dImageView);

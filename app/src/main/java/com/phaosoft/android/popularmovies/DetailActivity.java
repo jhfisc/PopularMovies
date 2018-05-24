@@ -182,14 +182,17 @@ public class DetailActivity extends AppCompatActivity {
                     @Override
                     protected void onStartLoading() {
 
-                        /* If no arguments were passed, we don't have a query to perform. Simply return. */
+                        /* 
+                         * If no arguments were passed, we don't have a query to perform. 
+                         * Simply return.
+                         */
                         if (arguments == null) {
                             return;
                         }
 
                         /*
-                         * When we initially begin loading in the background, we want to display the
-                         * loading indicator to the user
+                         * When we initially begin loading in the background, we want to display
+                         * the loading indicator to the user
                          */
 
                         if (trailersJson != null) {
@@ -252,9 +255,9 @@ public class DetailActivity extends AppCompatActivity {
 
                 int padding = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
                         (float)5.0, getResources().getDisplayMetrics());
-                int image_width = Math.max(0, (width - (4 * padding)) / column);
+                int imageWidth = Math.max(0, (width - (4 * padding)) / column);
                 // a movie poster's height is typically 1 1/2 times the width
-                final int image_height = Math.max(0, (image_width * 2) / 3);
+                final int imageHeight = Math.max(0, (imageWidth * 2) / 3);
 
                 trailersGrid.removeAllViews();
 
@@ -264,20 +267,20 @@ public class DetailActivity extends AppCompatActivity {
 
                 // image_unavailable is too big for the size of the thumbnails, therefore, resize it
                 Drawable unavailable = ImageUtils.scaleImage(context,
-                        R.drawable.image_unavailable, image_width, image_height);
+                        R.drawable.image_unavailable, imageWidth, imageHeight);
                 BitmapDrawable playBitmapDrawable = (BitmapDrawable)ImageUtils.scaleImage(context,
                         R.drawable.play_button_transparent_darkened,
-                        image_height / 2, image_height / 2);
+                        imageHeight / 2, imageHeight / 2);
                 Bitmap tmpBitmap = null;
                 if (playBitmapDrawable != null) {
                     tmpBitmap = playBitmapDrawable.getBitmap();
                 }
                 final Bitmap playBitmap = tmpBitmap;
-                int play_size = image_height / 2;
-                int center_x = image_width / 2;
-                int center_y = image_height / 2;
-                final int play_x = center_x - (play_size / 2);
-                final int play_y = center_y - (play_size / 2);
+                int playSize = imageHeight / 2;
+                int centerX = imageWidth / 2;
+                int centerY = imageHeight / 2;
+                final int playX = centerX - (playSize / 2);
+                final int playY = centerY - (playSize / 2);
 
                 // populate the gridlayout with the movie posters
                 for (int i = 0; i < total; i++) {
@@ -286,7 +289,7 @@ public class DetailActivity extends AppCompatActivity {
                     final ImageView dImageView = new ImageView(context);
                     // set the size of the image
                     DrawerLayout.LayoutParams dImageParams =
-                            new DrawerLayout.LayoutParams(image_width, image_height);
+                            new DrawerLayout.LayoutParams(imageWidth, imageHeight);
                     dImageView.setLayoutParams(dImageParams);
                     dImageView.setPadding(padding, padding, padding, padding);
                     // make it easy to tell which image was selected
@@ -294,7 +297,7 @@ public class DetailActivity extends AppCompatActivity {
                     // load the image
                     Picasso.with(context)
                             .load(trailer.getPictureUrl())
-                            .resize(image_width, image_height)
+                            .resize(imageWidth, imageHeight)
                             .placeholder(unavailable)
                             .into(dImageView,
                                     new Callback() {
@@ -305,7 +308,8 @@ public class DetailActivity extends AppCompatActivity {
                                             Bitmap bitmap = drawable.getBitmap();
                                             Canvas canvas = new Canvas(bitmap);
                                             if (playBitmap != null) {
-                                                canvas.drawBitmap(playBitmap, play_x, play_y, null);
+                                                canvas.drawBitmap(playBitmap,
+                                                        playX, playY, null);
                                             }
                                             dImageView.setImageBitmap(bitmap);
                                         }
@@ -363,14 +367,17 @@ public class DetailActivity extends AppCompatActivity {
                     @Override
                     protected void onStartLoading() {
 
-                        /* If no arguments were passed, we don't have a query to perform. Simply return. */
+                        /* 
+                         * If no arguments were passed, we don't have a query to perform.
+                         * Simply return. 
+                         */
                         if (reviewerArguments == null) {
                             return;
                         }
 
                         /*
-                         * When we initially begin loading in the background, we want to display the
-                         * loading indicator to the user
+                         * When we initially begin loading in the background, we want to display 
+                         * the loading indicator to the user
                          */
 
                         if (reviewersJson != null) {
@@ -386,7 +393,8 @@ public class DetailActivity extends AppCompatActivity {
                         /* Extract the search query from the args using our constant */
                         String reviewersUrlString = null;
                         if (reviewerArguments != null) {
-                            reviewersUrlString = reviewerArguments.getString(SEARCH_REVIEW_URL_EXTRA);
+                            reviewersUrlString = 
+                                    reviewerArguments.getString(SEARCH_REVIEW_URL_EXTRA);
                         }
 
                         /* If the user didn't enter anything, there's nothing to search for */
