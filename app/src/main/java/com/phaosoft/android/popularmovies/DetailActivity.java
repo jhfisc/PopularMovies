@@ -84,6 +84,8 @@ public class DetailActivity extends AppCompatActivity {
     private static final int WIDTH = 400;
     private static final int HEIGHT = 600;
 
+    private static final int MINIMUM_IMAGE_WIDTH = 540;
+
     private static boolean favorite = false;
 
     private static final int MOVIE_VIDEO_LOADER = 33;
@@ -244,9 +246,12 @@ public class DetailActivity extends AppCompatActivity {
                 int width = trailersGrid.getWidth();
                 int total = trailers.size();
                 int column = 2;
+                while ((width / column) > MINIMUM_IMAGE_WIDTH) {
+                    column++;
+                }
 
-                int padding = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, (float)5.0,
-                        getResources().getDisplayMetrics());
+                int padding = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
+                        (float)5.0, getResources().getDisplayMetrics());
                 int image_width = Math.max(0, (width - (4 * padding)) / column);
                 // a movie poster's height is typically 1 1/2 times the width
                 final int image_height = Math.max(0, (image_width * 2) / 3);
