@@ -147,11 +147,11 @@ public class NetworkUtils {
      * @return url String
      */
     public static String buildReviewString(String movieID) {
-        Uri builtUri = Uri.parse(MOVIEDB_BASE_URL + movieID + "reviews").buildUpon()
+        Uri builtUri = Uri.parse(MOVIEDB_BASE_URL + movieID + "/reviews").buildUpon()
                 .appendQueryParameter(PARAM_KEY, API_KEY)
                 .build();
 
-        Log.d("buildVideoString", "Uri: " + builtUri.toString());
+        Log.d("buildReviewString", "Uri: " + builtUri.toString());
 
         return builtUri.toString();
     }
@@ -162,7 +162,7 @@ public class NetworkUtils {
                 .appendQueryParameter(PARAM_KEY, API_KEY)
                 .build();
 
-        Log.d("buildVideoString", "Uri: " + builtUri.toString());
+        Log.d("buildTrailerString", "Uri: " + builtUri.toString());
 
         return builtUri.toString();
     }

@@ -17,15 +17,19 @@
 
 package com.phaosoft.android.popularmovies;
 
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.constraint.ConstraintLayout;
+import android.support.constraint.ConstraintSet;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.Loader;
@@ -60,15 +64,16 @@ import butterknife.ButterKnife;
  * Movie detail module
  */
 
-public class DetailActivity extends AppCompatActivity implements
-        LoaderManager.LoaderCallbacks<String> {
+public class DetailActivity extends AppCompatActivity {
 
+    @BindView(R.id.constraint) ConstraintLayout constraintLayout;
     @BindView(R.id.movie_poster) ImageView moviePoster;
     @BindView(R.id.release_date) TextView releaseDate;
     @BindView(R.id.vote_average) TextView voteAverage;
     @BindView(R.id.description_tv) TextView movieDescription;
     @BindView(R.id.favoriteStar) ImageButton favoriteStar;
     @BindView(R.id.trailers) GridLayout trailersGrid;
+    @BindView(R.id.reviews_label) TextView reviewsLabel;
 
     public static final String MOVIE_POSITION = "movie_position";
     private static final int DEFAULT_POSITION = -1;
@@ -88,8 +93,8 @@ public class DetailActivity extends AppCompatActivity implements
     private static final int MOVIE_REVIEW_LOADER = 44;
     private static final String SEARCH_REVIEW_URL_EXTRA = "reviews";
 
-    private static String reviewsString = null;
-    private static List<Review> reviews = null;
+    private static String reviewersString = null;
+    private static List<Review> reviewers = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -154,6 +159,307 @@ public class DetailActivity extends AppCompatActivity implements
         });
 
         trailersMovieDB(movieDetail);
+
+        createTrailersLoader();
+        createReviewersLoader();
+    }
+
+    private LoaderManager.LoaderCallbacks<String> createTrailersLoader() {
+        final Context context = getApplicationContext();
+
+        return new LoaderManager.LoaderCallbacks<String>() {
+            @NonNull
+            @Override
+            public Loader<String> onCreateLoader(int id, @Nullable Bundle args) {
+                final Bundle arguments = args;
+
+                return new AsyncTaskLoader<String>(context) {
+
+                    String trailersJson;
+
+                    @Override
+                    protected void onStartLoading() {
+
+                        /* If no arguments were passed, we don't have a query to perform. Simply return. */
+                        if (arguments == null) {
+                            return;
+                        }
+
+                        /*
+                         * When we initially begin loading in the background, we want to display the
+                         * loading indicator to the user
+                         */
+
+                        if (trailersJson != null) {
+                            deliverResult(trailersJson);
+                        } else {
+                            forceLoad();
+                        }
+                    }
+
+                    @Override
+                    public String loadInBackground() {
+
+                        /* Extract the search query from the args using our constant */
+                        String trailersUrlString = null;
+                        if (arguments != null) {
+                            trailersUrlString = arguments.getString(SEARCH_TRAILERS_URL_EXTRA);
+                        }
+
+                        /* If the user didn't enter anything, there's nothing to search for */
+                        if (trailersUrlString == null || TextUtils.isEmpty(trailersUrlString)) {
+                            return null;
+                        }
+
+                        /* Parse the URL from the passed in String and perform the search */
+                        try {
+                            URL movieUrl = new URL(trailersUrlString);
+                            return NetworkUtils.getResponseFromHttpUrl(movieUrl);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            return null;
+                        }
+                    }
+
+                    @Override
+                    public void deliverResult(String data) {
+                        trailersJson = data;
+                        super.deliverResult(data);
+                    }
+                };
+            }
+
+            @Override
+            public void onLoadFinished(@NonNull Loader<String> loader, String data) {
+                trailers = JsonUtils.parseJsonTrailers(data);
+                if (trailers == null) {
+                    Log.d("Details onLoadFinished", "trailers null (" + data + ")");
+                    return;
+                }
+
+                Log.d("Details onLoadFinished", trailers.toString());
+
+                int width = trailersGrid.getWidth();
+                int total = trailers.size();
+                int column = 2;
+
+                int padding = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, (float)5.0,
+                        getResources().getDisplayMetrics());
+                int image_width = Math.max(0, (width - (4 * padding)) / column);
+                // a movie poster's height is typically 1 1/2 times the width
+                final int image_height = Math.max(0, (image_width * 2) / 3);
+
+                trailersGrid.removeAllViews();
+
+                int row = total / column;
+                trailersGrid.setColumnCount(column);
+                trailersGrid.setRowCount(row + 1);
+
+                // image_unavailable is too big for the size of the thumbnails, therefore, resize it
+                Drawable unavailable = ImageUtils.scaleImage(context,
+                        R.drawable.image_unavailable, image_width, image_height);
+                BitmapDrawable playBitmapDrawable = (BitmapDrawable)ImageUtils.scaleImage(context,
+                        R.drawable.play_button_transparent_darkened,
+                        image_height / 2, image_height / 2);
+                Bitmap pbitmap = null;
+                if (playBitmapDrawable != null) {
+                    pbitmap = playBitmapDrawable.getBitmap();
+                }
+                final Bitmap play_bitmap = pbitmap;
+                int play_size = image_height / 2;
+                int center_x = image_width / 2;
+                int center_y = image_height / 2;
+                final int play_x = center_x - (play_size / 2);
+                final int play_y = center_y - (play_size / 2);
+
+                // populate the gridlayout with the movie posters
+                for (int i = 0; i < total; i++) {
+                    final Trailer trailer = trailers.get(i);
+                    // create a dynamic image view to hold the image
+                    final ImageView dImageView = new ImageView(context);
+                    // set the size of the image
+                    DrawerLayout.LayoutParams dImageParams =
+                            new DrawerLayout.LayoutParams(image_width, image_height);
+                    dImageView.setLayoutParams(dImageParams);
+                    dImageView.setPadding(padding, padding, padding, padding);
+                    // make it easy to tell which image was selected
+                    dImageView.setTag(i);
+                    // load the image
+                    Picasso.with(context)
+                            .load(trailer.getPictureUrl())
+                            .resize(image_width, image_height)
+                            .placeholder(unavailable)
+                            .into(dImageView,
+                                    new Callback() {
+                                        @Override
+                                        public void onSuccess() {
+                                            BitmapDrawable drawable =
+                                                    (BitmapDrawable) dImageView.getDrawable();
+                                            Bitmap bitmap = drawable.getBitmap();
+                                            Canvas canvas = new Canvas(bitmap);
+                                            if (play_bitmap != null) {
+                                                canvas.drawBitmap(play_bitmap, play_x, play_y, null);
+                                            }
+                                            dImageView.setImageBitmap(bitmap);
+                                        }
+
+                                        @Override
+                                        public void onError() {
+                                        }
+                                    });
+
+                    dImageView.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            int tag = (int)view.getTag();
+                            Uri uri = Uri.parse(trailers.get(tag).getVideoUrl());
+                            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+
+                            if (intent.resolveActivity(getPackageManager()) != null) {
+                                startActivity(intent);
+                            }
+                        }
+                    });
+
+
+                    // place the dynamic image into the gridlayout
+                    dImageView.setLayoutParams(new GridLayout.LayoutParams());
+
+                    GridLayout.Spec rowSpan = GridLayout.spec(GridLayout.UNDEFINED, 1);
+                    GridLayout.Spec colSpan = GridLayout.spec(GridLayout.UNDEFINED, 1);
+                    GridLayout.LayoutParams gridParam = new GridLayout.LayoutParams(
+                            rowSpan, colSpan);
+                    trailersGrid.addView(dImageView, gridParam);
+                }
+            }
+
+            @Override
+            public void onLoaderReset(@NonNull Loader<String> loader) {
+
+            }
+        };
+    }
+
+    private LoaderManager.LoaderCallbacks<String> createReviewersLoader() {
+        final Context context = getApplicationContext();
+
+        return new LoaderManager.LoaderCallbacks<String>() {
+            @NonNull
+            @Override
+            public Loader<String> onCreateLoader(int id, @Nullable Bundle args) {
+                final Bundle reviewerArguments = args;
+
+                return new AsyncTaskLoader<String>(context) {
+
+                    String reviewersJson;
+
+                    @Override
+                    protected void onStartLoading() {
+
+                        /* If no arguments were passed, we don't have a query to perform. Simply return. */
+                        if (reviewerArguments == null) {
+                            return;
+                        }
+
+                        /*
+                         * When we initially begin loading in the background, we want to display the
+                         * loading indicator to the user
+                         */
+
+                        if (reviewersJson != null) {
+                            deliverResult(reviewersJson);
+                        } else {
+                            forceLoad();
+                        }
+                    }
+
+                    @Override
+                    public String loadInBackground() {
+
+                        /* Extract the search query from the args using our constant */
+                        String reviewersUrlString = null;
+                        if (reviewerArguments != null) {
+                            reviewersUrlString = reviewerArguments.getString(SEARCH_REVIEW_URL_EXTRA);
+                        }
+
+                        /* If the user didn't enter anything, there's nothing to search for */
+                        if (reviewersUrlString == null || TextUtils.isEmpty(reviewersUrlString)) {
+                            return null;
+                        }
+
+                        /* Parse the URL from the passed in String and perform the search */
+                        try {
+                            URL reviewersUrl = new URL(reviewersUrlString);
+                            return NetworkUtils.getResponseFromHttpUrl(reviewersUrl);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            return null;
+                        }
+                    }
+
+                    @Override
+                    public void deliverResult(String data) {
+                        reviewersJson = data;
+                        super.deliverResult(data);
+                    }
+                };
+            }
+
+            @Override
+            public void onLoadFinished(@NonNull Loader<String> loader, String data) {
+                reviewers = JsonUtils.parseJsonReviewers(data);
+                if (reviewers == null) {
+                    Log.d("Details onLoadFinished", "reviewers null (" + data + ")");
+                    return;
+                }
+
+                Log.d("Details onLoadFinished", reviewers.toString());
+
+                int total = reviewers.size();
+
+                int topID = reviewsLabel.getId();
+                int parentID = constraintLayout.getId();
+                // populate the reviews
+                for (int i = 0; i < total; i++) {
+                    final Review review = reviewers.get(i);
+
+                    final TextView reviewTextView = new TextView(context);
+                    reviewTextView.setId(View.generateViewId());
+                    reviewTextView.setText(review.getReview());
+                    reviewTextView.setPadding(10, 50, 10, 25);
+                    int reviewViewID = reviewTextView.getId();
+                    ConstraintSet constraintSet = new ConstraintSet();
+                    constraintSet.connect(reviewViewID, ConstraintSet.TOP, topID, ConstraintSet.BOTTOM);
+                    constraintSet.connect(reviewViewID, ConstraintSet.LEFT, parentID, ConstraintSet.LEFT);
+                    constraintSet.constrainHeight(reviewViewID, ConstraintSet.WRAP_CONTENT);
+                    constraintSet.constrainWidth(reviewViewID, ConstraintSet.MATCH_CONSTRAINT);
+                    constraintLayout.addView(reviewTextView);
+                    constraintSet.applyTo(constraintLayout);
+                    topID = reviewViewID;
+
+                    final TextView reviewerTextView = new TextView(context);
+                    reviewerTextView.setId(View.generateViewId());
+                    reviewerTextView.setText(review.getReviewer());
+                    reviewerTextView.setTypeface(null, Typeface.BOLD);
+                    reviewerTextView.setPadding(0, 25, 0, 50);
+                    int reviewerViewID = reviewerTextView.getId();
+                    ConstraintSet reviewerConstraintSet = new ConstraintSet();
+                    reviewerConstraintSet.connect(reviewerViewID, ConstraintSet.TOP, topID, ConstraintSet.BOTTOM);
+                    reviewerConstraintSet.connect(reviewerViewID, ConstraintSet.LEFT, parentID, ConstraintSet.LEFT);
+                    reviewerConstraintSet.connect(reviewerViewID, ConstraintSet.RIGHT, parentID, ConstraintSet.RIGHT);
+                    reviewerConstraintSet.constrainHeight(reviewerViewID, ConstraintSet.WRAP_CONTENT);
+                    reviewerConstraintSet.constrainWidth(reviewerViewID, ConstraintSet.WRAP_CONTENT);
+                    constraintLayout.addView(reviewerTextView);
+                    reviewerConstraintSet.applyTo(constraintLayout);
+                    topID = reviewerViewID;
+                }
+            }
+
+            @Override
+            public void onLoaderReset(@NonNull Loader<String> loader) {
+
+            }
+        };
     }
 
     private void setFavorite() {
@@ -165,188 +471,31 @@ public class DetailActivity extends AppCompatActivity implements
         // build the trailersString
         trialersString = NetworkUtils.buildVideoString(movie.getID());
 
-        // build the reviewsString
-        reviewsString = NetworkUtils.buildReviewString(movie.getID());
-
-        Log.d("trailersMovieDB", trialersString);
         Bundle queryBundle = new Bundle();
         queryBundle.putString(SEARCH_TRAILERS_URL_EXTRA, trialersString);
 
+        LoaderManager.LoaderCallbacks<String> trailersCallback = createTrailersLoader();
         LoaderManager loaderManager = getSupportLoaderManager();
         Loader<String> movieSearchLoader = loaderManager.getLoader(MOVIE_VIDEO_LOADER);
         if (movieSearchLoader == null) {
-            loaderManager.initLoader(MOVIE_VIDEO_LOADER, queryBundle, this);
+            loaderManager.initLoader(MOVIE_VIDEO_LOADER, queryBundle, trailersCallback);
         } else {
-            loaderManager.restartLoader(MOVIE_VIDEO_LOADER, queryBundle, this);
-        }
-    }
-
-    @NonNull
-    @Override
-    public Loader<String> onCreateLoader(int id, @Nullable final Bundle args) {
-        return new AsyncTaskLoader<String>(this) {
-
-            String trailersJson;
-
-            @Override
-            protected void onStartLoading() {
-
-                /* If no arguments were passed, we don't have a query to perform. Simply return. */
-                if (args == null) {
-                    return;
-                }
-
-                /*
-                 * When we initially begin loading in the background, we want to display the
-                 * loading indicator to the user
-                 */
-
-                if (trailersJson != null) {
-                    deliverResult(trailersJson);
-                } else {
-                    forceLoad();
-                }
-            }
-
-            @Override
-            public String loadInBackground() {
-
-                /* Extract the search query from the args using our constant */
-                String trailersUrlString = null;
-                if (args != null) {
-                    trailersUrlString = args.getString(SEARCH_TRAILERS_URL_EXTRA);
-                }
-
-                /* If the user didn't enter anything, there's nothing to search for */
-                if (trailersUrlString == null || TextUtils.isEmpty(trailersUrlString)) {
-                    return null;
-                }
-
-                /* Parse the URL from the passed in String and perform the search */
-                try {
-                    URL movieUrl = new URL(trailersUrlString);
-                    return NetworkUtils.getResponseFromHttpUrl(movieUrl);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    return null;
-                }
-            }
-
-            @Override
-            public void deliverResult(String data) {
-                trailersJson = data;
-                super.deliverResult(data);
-            }
-        };
-    }
-
-    @Override
-    public void onLoadFinished(@NonNull Loader<String> loader, final String data) {
-        trailers = JsonUtils.parseJsonTrailers(data);
-        if (trailers == null) {
-            Log.d("Details onLoadFinished", "trailers null (" + data + ")");
-            return;
+            loaderManager.restartLoader(MOVIE_VIDEO_LOADER, queryBundle, trailersCallback);
         }
 
-        Log.d("Details onLoadFinished", trailers.toString());
+        // build the reviewsString
+        reviewersString = NetworkUtils.buildReviewString(movie.getID());
 
-        int width = trailersGrid.getWidth();
-        int total = trailers.size();
-        int column = 2;
+        Bundle trailersQueryBundle = new Bundle();
+        trailersQueryBundle.putString(SEARCH_REVIEW_URL_EXTRA, reviewersString);
 
-        int padding = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, (float)5.0,
-                getResources().getDisplayMetrics());
-        int image_width = (width - (4 * padding)) / column;
-        // a movie poster's height is typically 1 1/2 times the width
-        final int image_height = (image_width * 2) / 3;
-
-        trailersGrid.removeAllViews();
-
-        int row = total / column;
-        trailersGrid.setColumnCount(column);
-        trailersGrid.setRowCount(row + 1);
-
-        // image_unavailable is too big for the size of the thumbnails, therefore, resize it
-        Drawable unavailable = ImageUtils.scaleImage(this,
-                R.drawable.image_unavailable, image_width, image_height);
-        BitmapDrawable playBitmapDrawable = (BitmapDrawable)ImageUtils.scaleImage(this,
-                R.drawable.play_button_transparent_darkened,
-                image_height / 2, image_height / 2);
-        Bitmap pbitmap = null;
-        if (playBitmapDrawable != null) {
-            pbitmap = playBitmapDrawable.getBitmap();
+        LoaderManager.LoaderCallbacks<String> reviewersCallback = createReviewersLoader();
+        LoaderManager reviewersLoaderManager = getSupportLoaderManager();
+        Loader<String> reviewersSearchLoader = reviewersLoaderManager.getLoader(MOVIE_REVIEW_LOADER);
+        if (reviewersSearchLoader == null) {
+            reviewersLoaderManager.initLoader(MOVIE_REVIEW_LOADER, trailersQueryBundle, reviewersCallback);
+        } else {
+            reviewersLoaderManager.restartLoader(MOVIE_REVIEW_LOADER, trailersQueryBundle, reviewersCallback);
         }
-        final Bitmap play_bitmap = pbitmap;
-        int play_size = image_height / 2;
-        int center_x = image_width / 2;
-        int center_y = image_height / 2;
-        final int play_x = center_x - (play_size / 2);
-        final int play_y = center_y - (play_size / 2);
-
-        // populate the gridlayout with the movie posters
-        for (int i = 0; i < total; i++) {
-            final Trailer trailer = trailers.get(i);
-            // create a dynamic image view to hold the image
-            final ImageView dImageView = new ImageView(this);
-            // set the size of the image
-            DrawerLayout.LayoutParams dImageParams =
-                    new DrawerLayout.LayoutParams(image_width, image_height);
-            dImageView.setLayoutParams(dImageParams);
-            dImageView.setPadding(padding, padding, padding, padding);
-            // make it easy to tell which image was selected
-            dImageView.setTag(i);
-            // load the image
-            Picasso.with(this)
-                    .load(trailer.getPictureUrl())
-                    .resize(image_width, image_height)
-                    .placeholder(unavailable)
-                    .into(dImageView,
-                            new Callback() {
-                                @Override
-                                public void onSuccess() {
-                                    BitmapDrawable drawable =
-                                            (BitmapDrawable) dImageView.getDrawable();
-                                    Bitmap bitmap = drawable.getBitmap();
-                                    Canvas canvas = new Canvas(bitmap);
-                                    if (play_bitmap != null) {
-                                        canvas.drawBitmap(play_bitmap, play_x, play_y, null);
-                                    }
-                                    dImageView.setImageBitmap(bitmap);
-                                }
-
-                                @Override
-                                public void onError() {
-                                }
-                            });
-
-            dImageView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    int tag = (int)view.getTag();
-                    Uri uri = Uri.parse(trailers.get(tag).getVideoUrl());
-                    Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-
-                    if (intent.resolveActivity(getPackageManager()) != null) {
-                        startActivity(intent);
-                    }
-                }
-            });
-
-
-            // place the dynamic image into the gridlayout
-            dImageView.setLayoutParams(new GridLayout.LayoutParams());
-
-            GridLayout.Spec rowSpan = GridLayout.spec(GridLayout.UNDEFINED, 1);
-            GridLayout.Spec colSpan = GridLayout.spec(GridLayout.UNDEFINED, 1);
-            GridLayout.LayoutParams gridParam = new GridLayout.LayoutParams(
-                    rowSpan, colSpan);
-            trailersGrid.addView(dImageView, gridParam);
-
-        }
-    }
-
-    @Override
-    public void onLoaderReset(@NonNull Loader<String> loader) {
-
     }
 }

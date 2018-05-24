@@ -20,6 +20,7 @@ package com.phaosoft.android.popularmovies.utils;
 import android.util.Log;
 
 import com.phaosoft.android.popularmovies.model.Movie;
+import com.phaosoft.android.popularmovies.model.Review;
 import com.phaosoft.android.popularmovies.model.Trailer;
 
 import org.json.JSONArray;
@@ -125,4 +126,41 @@ public class JsonUtils {
         return null;
     }
 
+    /**
+     * Parse a Json String converting it to a list of reviews.
+     * @param json string to parse
+     * @return Reviews list
+     */
+    public static List<Review> parseJsonReviewers(String json) {
+        JSONObject jobj;
+
+        try {
+            Log.d("parseJsonReviewers", "json string: " + json);
+            jobj = new JSONObject(json);
+            List<Review> reviewers = new ArrayList<>();
+
+            // multiple movies returned
+            if (jobj.has("results")) {
+                JSONArray results = jobj.getJSONArray("results");
+                // iterate through the reviewer results list
+                int len = results.length();
+                for (int i = 0; i < len; i++) {
+                    JSONObject result = (JSONObject)results.get(i);
+                    // add the current review
+                    reviewers.add(new Review(result.getString("author"), result.getString("content")));
+                }
+
+                return reviewers;
+            } else if (jobj.has("title")) {
+                // add the single review
+                reviewers.add(new Review(jobj.getString("author"),
+                        jobj.getString("content")));
+
+                return reviewers;
+            }
+        } catch (JSONException e) {
+            Log.e("JsonUtils", e.getMessage());
+        }
+        return null;
+    }
 }

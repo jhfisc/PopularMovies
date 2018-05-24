@@ -4,8 +4,8 @@ package com.phaosoft.android.popularmovies.model;
  * Review data model module
  */
 public class Review {
-    private static String reviewer = null;
-    private static String review = null;
+    private String reviewer = null;
+    private String review = null;
 
     public Review() {}
 

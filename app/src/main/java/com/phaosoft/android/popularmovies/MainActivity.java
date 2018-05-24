@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     @BindView(R.id.sort_spinner) Spinner sortSpinner;
     @BindView(R.id.scroll_view) ScrollView scrollView;
-    @BindView(R.id.grid_layout) GridLayout pictureGrid;
+    @BindView(R.id.grid_layout) public GridLayout pictureGrid;
     @BindView(R.id.movie_db_image) ImageView mMovieDBImage;
     @BindView(R.id.network_available) TextView mNetworkAvailability;
 
@@ -209,7 +209,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         }
     }
 
-    private void launchDetailActivity(int position) {
+    public void launchDetailActivity(int position) {
         if (movies == null) {
             Log.d("Main", "no movies to select");
             return ;
@@ -322,7 +322,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         };
     }
 
-    private boolean moviesSame(List<Movie> current) {
+    public boolean moviesSame(List<Movie> current) {
         if (movies == null || current == null) {
             return movies == null && current == null;
         }
