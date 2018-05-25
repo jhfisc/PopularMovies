@@ -111,7 +111,7 @@ public class JsonUtils {
                 }
 
                 return trailers;
-            } else if (jobj.has("title")) {
+            } else if (jobj.has("name")) {
                 String key = jobj.getString("key");
                 // add the single movie
                 trailers.add(new Trailer(key, jobj.getString("name"),
