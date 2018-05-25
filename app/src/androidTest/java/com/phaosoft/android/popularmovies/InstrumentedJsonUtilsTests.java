@@ -47,7 +47,7 @@ public class InstrumentedJsonUtilsTests {
 
     private static final String NULL_TRAILER = "{}";
     private static final String ONLY_TRAILER_RESULTS = "{\"results\": 1}";
-    private static final String ONLY_TRAILER_TITLE = "{\"title\": 1}";
+    private static final String ONLY_TRAILER_NAME = "{\"name\": 1}";
 
     @Test
     public void jsonUtilsTrailers() {
@@ -74,7 +74,7 @@ public class InstrumentedJsonUtilsTests {
         trailer = JsonUtils.parseJsonTrailers(ONLY_TRAILER_RESULTS);
         assertNull(trailer);
 
-        trailer = JsonUtils.parseJsonTrailers(ONLY_TRAILER_TITLE);
+        trailer = JsonUtils.parseJsonTrailers(ONLY_TRAILER_NAME);
         assertNull(trailer);
 
     }
