@@ -147,7 +147,9 @@ public class DetailActivity extends AppCompatActivity {
 
         releaseDate.setText(movieDetail.getDate());
 
-        voteAverage.setText(String.valueOf(movieDetail.getVote()));
+        String vote = String.valueOf(movieDetail.getVote()) +
+                getResources().getString(R.string.out_of);
+        voteAverage.setText(vote);
 
         movieDescription.setText(movieDetail.getSynopsis());
 
