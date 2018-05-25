@@ -147,11 +147,12 @@ public class JsonUtils {
                 for (int i = 0; i < len; i++) {
                     JSONObject result = (JSONObject)results.get(i);
                     // add the current review
-                    reviewers.add(new Review(result.getString("author"), result.getString("content")));
+                    reviewers.add(new Review(result.getString("author"),
+                            result.getString("content")));
                 }
 
                 return reviewers;
-            } else if (jobj.has("title")) {
+            } else if (jobj.has("content")) {
                 // add the single review
                 reviewers.add(new Review(jobj.getString("author"),
                         jobj.getString("content")));
