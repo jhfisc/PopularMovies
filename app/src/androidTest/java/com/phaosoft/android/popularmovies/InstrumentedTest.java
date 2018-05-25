@@ -4,13 +4,20 @@ import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
+import android.util.Log;
 
+import com.phaosoft.android.popularmovies.model.Trailer;
 import com.phaosoft.android.popularmovies.utils.ImageUtils;
+import com.phaosoft.android.popularmovies.utils.JsonUtils;
 import com.phaosoft.android.popularmovies.utils.NetworkUtils;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.List;
+
+import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertNull;
 import static org.junit.Assert.*;
 
 /**
